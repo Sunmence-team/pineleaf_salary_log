@@ -1,0 +1,30 @@
+@import "tailwindcss";
+
+@theme {
+  --color-pryClr: #2F5318;
+  --color-secClr: #E6FFF6F6;
+  --color-tetClr: #F5DD00; 
+}
+
+*{
+  font-family: "Lato", sans-serif;
+  font-optical-sizing: auto;
+  font-style: normal;
+}
+
+.no-scrollbar::-webkit-scrollbar{
+  @apply hidden
+}
+
+input[type="number"].no-marker{
+  -moz-appearance: textfield;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+input[type="number"].no-spin::-webkit-inner-spin-button,
+input[type="number"].no-spin::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+  @apply hidden;
+}
