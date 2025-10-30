@@ -59,7 +59,7 @@ const AllEmployees = () => {
 
     try {
       const response = await api.get(
-        `/api/employess/search?name=${searchQuery}&page=${currentPageFromApi}&per_page=${apiItemsPerPage}`,
+        `/employess/search?name=${searchQuery}&page=${currentPageFromApi}&per_page=${apiItemsPerPage}`,
         {
           headers: {
             "Content-Type": "application/json",
