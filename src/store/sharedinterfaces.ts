@@ -6,13 +6,12 @@ export interface bankProps {
 
 export interface employeeProps {
   id: string;
-  firstName: string;
-  lastName: string;
+  full_name:string;
   email: string;
   number: string;
   employmentType: string;
   jobTitle: string;
-  dept: string;
-  specPay: string;
+  company_branch: string;
+  salary_amount: string;
   created_at: string;
 }

@@ -18,11 +18,9 @@ import { useUser } from "../context/UserContext";
 import api from "../utilities/api";
 import type { employeeProps } from "../store/sharedinterfaces";
 
-
-
 const AllEmployees = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [openDropdown, setOpenDropdown] = useState<boolean | null>(null);
+  const [openDropdown, setOpenDropdown] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [showMobileFilters, setShowMobileFilters] = useState(false);
 
@@ -44,7 +42,7 @@ const AllEmployees = () => {
     useState<employeeProps | null>(null);
 
   const toggleDropdown = (dropdownName: boolean) => {
-    setOpenDropdown(openDropdown === dropdownName ? null : dropdownName);
+    setOpenDropdown(openDropdown === dropdownName ? false : dropdownName);
   };
 
   const fetchEmployees = useCallback(async () => {
@@ -59,7 +57,7 @@ const AllEmployees = () => {
 
     try {
       const response = await api.get(
-        `/employess/search?name=${searchQuery}&page=${currentPageFromApi}&per_page=${apiItemsPerPage}`,
+        `/all_employers?name=${searchQuery}&page=${currentPageFromApi}&per_page=${apiItemsPerPage}`,
         {
           headers: {
             "Content-Type": "application/json",
@@ -68,9 +66,9 @@ const AllEmployees = () => {
         }
       );
 
-      // console.log("employees response", response);
+      console.log("employees response", response);
 
-      if (response.status === 200 && response.data.success) {
+      if (response.status === 200 && response.data.status === "success") {
         setEmployees(response.data.data.data);
         setCurrentPageFromApi(response.data.data.current_page);
         setTotalApiPages(response.data.data.last_page);
@@ -114,7 +112,7 @@ const AllEmployees = () => {
 
   const filteredList = employees.filter((data) => {
     const statusMatches =
-      selectedStatus === "All" ||
+      selectedStatus === "all" ||
       data.employmentType?.toLowerCase() === selectedStatus.toLowerCase();
 
     return statusMatches;
@@ -130,12 +128,15 @@ const AllEmployees = () => {
   const handleDeleteemployee = async () => {
     setIsDeleting(true); // Start deleting process, disable button
     try {
-      const response = await api.delete(`/api/employees/${employeeToDelete}`, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await api.delete(
+        `/delete_employers/${employeeToDelete?.id}`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       // // console.log("employees delete response", response);
 
@@ -197,18 +198,18 @@ const AllEmployees = () => {
             <div hidden className="relative w-full md:w-auto">
               <button
                 className="flex items-center justify-between w-full md:w-auto gap-2 px-3 py-2 border border-gray-300 rounded-lg bg-transparent text-sm"
-                onClick={() => toggleDropdown("status")}
+                onClick={() => toggleDropdown(true)}
               >
                 <span>{selectedStatus}</span>
                 <FiChevronDown size={16} />
               </button>
 
-              {openDropdown === "status" && (
+              {!openDropdown && (
                 <div className="absolute z-10 mt-1 w-full md:w-full bg-white rounded-md shadow-lg border border-gray-200">
-                  {statusOptions.map((option) => (
+                  {statusOptions.map((option, index) => (
                     <button
-                      key={option}
-                      className={`block w-fuxl px-4 py-2 text-sm text-center ${
+                      key={index}
+                      className={`block w-full px-4 py-2 text-sm text-center ${
                         selectedStatus === option
                           ? "text-blue-600 bg-blue-50"
                           : "text-gray-700"
@@ -293,7 +294,7 @@ const AllEmployees = () => {
                       {(currentPageFromApi - 1) * apiItemsPerPage + (index + 1)}
                     </td>
                     <td className="p-4 md:text-sm text-xs whitespace-nowrap font-medium">
-                      {`${employee.firstName} ${employee.lastName}` || "-"}
+                      {employee.full_name}
                     </td>
 
                     <td className="p-4 md:text-sm text-xs whitespace-nowrap">
@@ -301,11 +302,11 @@ const AllEmployees = () => {
                     </td>
 
                     <td className="p-4 md:text-sm text-xs whitespace-nowrap">
-                      {employee.dept || "-"}
+                      {employee.company_branch || "-"}
                     </td>
 
                     <td className="p-4 md:text-sm text-xs whitespace-nowrap">
-                      N{formatterUtility(Number(employee.specPay)) || "-"}
+                      N{formatterUtility(Number(employee.salary_amount)) || "-"}
                     </td>
 
                     <td className="p-4 md:text-sm text-xs whitespace-nowrap text-pryClr font-bold">
@@ -362,8 +363,8 @@ const AllEmployees = () => {
       {/* Confirmation Modal */}
       <ConfirmDialog
         isOpen={showConfirmModal}
-        title={`Delete ${employeeToDelete?.firstName} ${employeeToDelete?.lastName}?`}
-        message={`Are you sure you want to delete "${employeeToDelete?.firstName} ${employeeToDelete?.lastName}"? This action cannot be undone.`}
+        title={`Delete ${employeeToDelete?.full_name}?`}
+        message={`Are you sure you want to delete "${employeeToDelete?.full_name}"? This action cannot be undone.`}
         confirmText="Yes, Delete"
         cancelText="Cancel"
         onCancel={handleModalCancel}
