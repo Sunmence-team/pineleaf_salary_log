@@ -28,3 +28,10 @@ input[type="number"].no-spin::-webkit-outer-spin-button {
   margin: 0;
   @apply hidden;
 }
+
+.styled-scrollbar::-webkit-scrollbar {
+  @apply lg:w-2 w-1 h-1;
+}
+.styled-scrollbar::-webkit-scrollbar-thumb {
+  @apply bg-[#cbd5e1] rounded-full;
+}

@@ -10,7 +10,7 @@ import { useUser } from "../../context/UserContext";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
 
-const username = () => {
+const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -51,7 +51,7 @@ const username = () => {
           if (location.pathname !== "/overview") {
             setTimeout(() => {
               const redirectToast = toast.loading(
-                "Redirecting to dashboard..."
+                "Redirecting to dashboard"
               );
               setTimeout(() => {
                 toast.dismiss(redirectToast);
@@ -65,8 +65,8 @@ const username = () => {
                 };
                 login(token, user, metrics);
                 navigate("/overview");
-              }, 1000);
-            }, 2000);
+              }, 500);
+            }, 100);
           }
         } else {
           toast.error("Failed to login");
@@ -165,7 +165,7 @@ const username = () => {
             disabled={!formik.isValid || formik.isSubmitting}
             className="w-full py-3 bg-[#2F5318] text-white font-medium rounded-md hover:bg-[#254015] transition duration-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {formik.isSubmitting ? "Logging in..." : "username"}
+            {formik.isSubmitting ? "Logging in..." : "Log in"}
           </button>
         </form>
       </div>
@@ -173,4 +173,4 @@ const username = () => {
   );
 };
 
-export default username;
+export default Login;

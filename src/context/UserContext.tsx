@@ -94,7 +94,8 @@ export const UserProvider = ({ children }: userProviderProps) => {
     });
     toast.success("Logged out successfully");
     setTimeout(() => {
-      window.location.href = "https://pineleafestates.com/#/login";
+      // window.location.href = "https://pineleafestates.com/#/login";
+      window.location.href = "http://localhost:5173/";
     }, 1000);
   };
 
