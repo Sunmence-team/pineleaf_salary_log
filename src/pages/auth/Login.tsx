@@ -50,9 +50,7 @@ const Login = () => {
 
           if (location.pathname !== "/overview") {
             setTimeout(() => {
-              const redirectToast = toast.loading(
-                "Redirecting to dashboard"
-              );
+              const redirectToast = toast.loading("Redirecting to dashboard");
               setTimeout(() => {
                 toast.dismiss(redirectToast);
                 const token: string = response.data.token;
