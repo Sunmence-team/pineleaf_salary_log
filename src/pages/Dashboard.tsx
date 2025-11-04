@@ -2,6 +2,9 @@ import React from "react";
 import OverviewCards from "../components/cards/OverviewCards";
 import { MdWallet } from "react-icons/md";
 import { FaUsers } from "react-icons/fa6";
+import { Link } from "react-router-dom";
+import { FaLongArrowAltRight } from "react-icons/fa";
+import { GoArrowUpRight } from "react-icons/go";
 
 const Dashboard = () => {
   return (
@@ -39,6 +42,14 @@ const Dashboard = () => {
             }
             value="43"
           />
+        </div>
+      </div>
+      <div className="flex flex-col gap-5">
+        <div className="flex justify-between items-center">
+          <h2>Recent Transactions</h2>
+          <Link to="/alltransactions" className="flex items-center underline">
+            View All <GoArrowUpRight />
+          </Link>
         </div>
       </div>
     </div>
