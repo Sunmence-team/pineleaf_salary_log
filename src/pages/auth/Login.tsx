@@ -73,7 +73,7 @@ const Login = () => {
         } else {
           toast.error("Failed to login");
         }
-      } catch (err: unknown) {
+      } catch (err: any) {
         console.error("Error during logging in:", err);
         if (
           axios.isAxiosError(err) &&
