@@ -8,16 +8,14 @@ interface userProviderProps {
 }
 
 interface userProps {
-  fullname: string;
   role: string;
 }
 
 interface dashboardMetricsProps {
-  no_properties: number;
-  no_purchases: number;
-  no_users: number;
-  total_balance: number | string;
-  total_bonus: number | string;
+  total_employees: number;
+  total_salary_paid: number;
+  no_CompletedPayments:number;
+  total_estimated_salary:number
 }
 
 const UserContext = createContext();
@@ -29,11 +27,10 @@ export const UserProvider = ({ children }: userProviderProps) => {
 
   const [dashboardMetrics, setDashboardMetrics] =
     useState<dashboardMetricsProps>({
-      no_properties: 0,
-      no_purchases: 0,
-      no_users: 0,
-      total_balance: "0.00",
-      total_bonus: "0.00",
+      total_employees: 0,
+      total_salary_paid: 0,
+      no_CompletedPayments:0,
+      total_estimated_salary:0
     });
 
   useEffect(() => {
@@ -79,16 +76,15 @@ export const UserProvider = ({ children }: userProviderProps) => {
     setUser(null);
     localStorage.removeItem("dashboardMetrics"); // Clear metrics on logout
     setDashboardMetrics({
-      // Reset metrics state
-      no_properties: 0,
-      no_purchases: 0,
-      no_users: 0,
-      total_balance: "0.00",
-      total_bonus: "0.00",
+      total_employees: 0,
+      total_salary_paid: 0,
+      no_CompletedPayments: 0,
+      total_estimated_salary: 0,
     });
     toast.success("Logged out successfully");
     setTimeout(() => {
-      window.location.href = "https://pineleafestates.com/#/login";
+      // window.location.href = "https://pineleafestates.com/#/login";
+      window.location.href = "http://localhost:5173/";
     }, 1000);
   };
 

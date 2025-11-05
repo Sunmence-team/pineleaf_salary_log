@@ -13,52 +13,8 @@ const TopNav = ({ pageName } : { pageName:string }) => {
     const location = useLocation();
     const navigate = useNavigate();
 
-    const h3Ref = useRef(null);
-    const textWrapperRef = useRef(null);
-    const [isOverflowing, setIsOverflowing] = useState(false);
-
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const dropdownRef = useRef(null); // Ref to the dropdown container
-
-    // Marquee text overflow check (existing logic, wrapped in useCallback for efficiency)
-    const checkOverflow = useCallback(() => {
-        if (textWrapperRef.current && h3Ref.current) {
-            const originalDisplay = textWrapperRef.current.style.display;
-            const originalPosition = textWrapperRef.current.style.position;
-            const originalVisibility = textWrapperRef.current.style.visibility;
-            const originalWidth = textWrapperRef.current.style.width;
-            const originalWhiteSpace = textWrapperRef.current.style.whiteSpace;
-
-            textWrapperRef.current.style.display = 'inline-block';
-            textWrapperRef.current.style.position = 'absolute';
-            textWrapperRef.current.style.visibility = 'hidden';
-            textWrapperRef.current.style.width = 'auto';
-            textWrapperRef.current.style.whiteSpace = 'nowrap';
-
-            const contentWidth = textWrapperRef.current.scrollWidth;
-
-            textWrapperRef.current.style.display = originalDisplay;
-            textWrapperRef.current.style.position = originalPosition;
-            textWrapperRef.current.style.visibility = originalVisibility;
-            textWrapperRef.current.style.width = originalWidth;
-            textWrapperRef.current.style.whiteSpace = originalWhiteSpace;
-
-            const containerWidth = h3Ref.current.clientWidth;
-
-            const hasOverflow = contentWidth > containerWidth;
-            setIsOverflowing(hasOverflow);
-        }
-    }, [pageName]);
-
-    useEffect(() => {
-        const timeoutId = setTimeout(checkOverflow, 100);
-        window.addEventListener('resize', checkOverflow);
-
-        return () => {
-            clearTimeout(timeoutId);
-            window.removeEventListener('resize', checkOverflow);
-        };
-    }, [pageName, checkOverflow]);
 
   
     useEffect(() => {
