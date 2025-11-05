@@ -4,24 +4,19 @@ import { toast } from "sonner";
 import api from "../utilities/api";
 import { useUser } from "../context/UserContext";
 import PaginationControls from "../utilities/PaginationControls";
-import { MdDelete, MdModeEditOutline, MdRemoveRedEye } from "react-icons/md";
-import { Link } from "react-router-dom";
 import {
   formatISODateToCustom,
   formatterUtility,
 } from "../utilities/FormatterUtility";
-import ConfirmDialog from "../components/modal/ConfirmDialog";
 interface AllCotransactionsProps {
   isRecent: boolean;
 }
 
-const AllTransactions: React.FC = ({
-  isRecent = false,
-}: AllCotransactionsProps) => {
+const AllTransactions: React.FC<AllCotransactionsProps> = ({ isRecent = false }) => {
   const { token } = useUser();
   const [transactions, setTransactions] = useState<transactionsProps[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<any>(null);
 
   const [currentPageFromApi, setCurrentPageFromApi] = useState(1);
   const [totalApiPages, setTotalApiPages] = useState(1);
@@ -94,16 +89,16 @@ const AllTransactions: React.FC = ({
       <div className="overflow-x-auto rounded-lg no-scrollbar w-full lg:p-0 pe-4">
         <table className="w-full text-center">
           <thead>
-            <tr className="bg-white/61 h-[77px]">
-              <th className="p-4 md:text-sm text-xs whitespace-nowrap">S/N</th>
-              <th className="p-4 md:text-sm text-xs whitespace-nowrap">
+            <tr className="bg-white/61 h-[65px]">
+              <th className="text-xs whitespace-nowrap">S/N</th>
+              <th className="text-xs whitespace-nowrap">
                 Employee Name
               </th>
 
-              <th className="p-4 md:text-sm text-xs whitespace-nowrap">
+              <th className="text-xs whitespace-nowrap">
                 Amount
               </th>
-              <th className="p-4 md:text-sm text-xs whitespace-nowrap">
+              <th className="text-xs whitespace-nowrap">
                 Payment Date
               </th>
             </tr>
@@ -148,18 +143,16 @@ const AllTransactions: React.FC = ({
                     <td>
                       {(currentPageFromApi - 1) * apiItemsPerPage + (index + 1)}
                     </td>
-                    <td className="p-4 md:text-sm text-xs whitespace-nowrap font-medium">
+                    <td className="p-4 text-xs whitespace-nowrap font-medium">
                       {transaction.employee_name || "-"}
                     </td>
 
-                   
-
-                    <td className="p-4 md:text-sm text-xs whitespace-nowrap">
+                    <td className="p-4 text-xs whitespace-nowrap">
                       N{formatterUtility(Number(transaction.amount)) || "-"}
                     </td>
 
-                    <td className="p-4 md:text-sm text-xs whitespace-nowrap text-pryClr font-bold">
-                      {formatISODateToCustom(transaction.payment_date) || "-"}
+                    <td className="p-4 text-xs whitespace-nowrap text-pryClr font-bold">
+                      {formatISODateToCustom(transaction.payment_date).split(" ")[0] || "-"}
                     </td>
                   </tr>
                 );
@@ -167,7 +160,7 @@ const AllTransactions: React.FC = ({
             )}
           </tbody>
           <tfoot>
-            <tr className={"bg-white/61 h-[77px] border-t border-black/10"}>
+            <tr className={"bg-white/61 h-[65px] border-t border-black/10"}>
               <td className="text-center p-4" colSpan={8}>
                 <PaginationControls
                   currentPage={currentPageFromApi}

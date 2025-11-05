@@ -1,7 +1,7 @@
 import React from 'react';
 import { MdKeyboardArrowLeft, MdKeyboardArrowRight } from "react-icons/md";
 
-const PaginationControls = ({ currentPage, totalPages, setCurrentPage } : { currentPage:number, totalPages:number, setCurrentPage:(param:number) => void }) => {
+const PaginationControls = ({ currentPage, totalPages, setCurrentPage } : { currentPage:number, totalPages:number, setCurrentPage: React.Dispatch<React.SetStateAction<number>> }) => {
 
     const getPageNumbers = () => {
         const pages = [];
@@ -82,7 +82,7 @@ const PaginationControls = ({ currentPage, totalPages, setCurrentPage } : { curr
                     ) : (
                         <button
                             key={page}
-                            onClick={() => setCurrentPage(page)}
+                            onClick={() => setCurrentPage(page as number)}
                             className={`px-3 py-1 rounded-md cursor-pointer transition-all duration-200 ${
                                 currentPage === page
                                     ? "bg-pryClr text-white"
@@ -96,7 +96,7 @@ const PaginationControls = ({ currentPage, totalPages, setCurrentPage } : { curr
             </span>
             <button
                 disabled={currentPage === totalPages}
-                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                onClick={() => setCurrentPage((prev: number) => Math.min(prev + 1, totalPages))}
                 className="px-3 py-2.5 opacity-100 rounded-md hover:bg-pryClr/20 cursor-pointer disabled:cursor-not-allowed disabled:opacity-25"
             >
                 <MdKeyboardArrowRight />

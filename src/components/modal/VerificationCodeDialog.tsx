@@ -77,7 +77,8 @@ const VerificationCodeDialog = ({
   ) => {
     if (e.key === "Backspace") {
       if (!code[index] && index > 0) {
-        (e.target as HTMLInputElement).previousElementSibling?.focus();
+        const prev = (e.target as HTMLInputElement).previousElementSibling as HTMLInputElement | null;
+        prev?.focus();
       }
     }
   };
@@ -109,7 +110,7 @@ const VerificationCodeDialog = ({
               value={code[index] || ""}
               onChange={(e) => handleInputChange(e, index)}
               onKeyDown={(e) => handleKeyDown(e, index)}
-              className="w-10 h-12 border rounded-lg text-center text-lg font-semibold tracking-widest"
+              className="w-12 h-12 border border-pryClr/50 rounded-lg text-center text-xl font-semibold flex items-center justify-center"
               aria-label={`Digit ${index + 1} of 6`}
             />
           ))}

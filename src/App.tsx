@@ -47,7 +47,7 @@ function App() {
           element={
             <MainLayout
               pageName="All Transactions"
-              children={<AllTransactions />}
+              children={<AllTransactions isRecent />}
             />
           }
         />

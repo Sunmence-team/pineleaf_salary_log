@@ -18,7 +18,7 @@ const MainLayout = ({ children, pageName }: LayoutProps) => {
 	}, [pageName])
     
     const location = useLocation();
-    const mainContentRef = useRef(null);
+    const mainContentRef = useRef<HTMLDivElement | null>(null);
     const pageVariants = {
         initial: {
             opacity: 0,
@@ -153,7 +153,7 @@ const MainLayout = ({ children, pageName }: LayoutProps) => {
                             initial="initial"
                             animate="animate"
                             exit="exit"
-                            variants={pageVariants}
+                            variants={pageVariants as any}
                             style={{ minHeight: "100%", display: "flex", flexDirection: "column" }}
                         >
                             {children}

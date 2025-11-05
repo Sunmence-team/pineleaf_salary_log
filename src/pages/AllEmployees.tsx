@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import ConfirmDialog from "../components/modal/ConfirmDialog";
 import PaginationControls from "../utilities/PaginationControls";
-import { Link } from "react-router-dom";
 import {
   MdDelete,
   MdModeEditOutline,
@@ -30,7 +29,7 @@ const AllEmployees = () => {
   const [employees, setEmployees] = useState<employeeProps[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<any>(null);
 
   const [currentPageFromApi, setCurrentPageFromApi] = useState(1);
   const [totalApiPages, setTotalApiPages] = useState(1);
@@ -47,9 +46,9 @@ const AllEmployees = () => {
   const [employeeToDelete, setEmployeeToDelete] =
     useState<employeeProps | null>(null);
 
-  const toggleDropdown = (dropdownName: boolean) => {
-    setOpenDropdown(openDropdown === dropdownName ? false : dropdownName);
-  };
+  // const toggleDropdown = (dropdownName: boolean) => {
+  //   setOpenDropdown(openDropdown === dropdownName ? false : dropdownName);
+  // };
 
   const editAction = () => {
     setShowEditModal(false);
@@ -263,19 +262,19 @@ const AllEmployees = () => {
         <table className="w-full text-center">
           <thead>
             <tr className="bg-white/61 h-[77px]">
-              <th className="p-4 md:text-sm text-xs whitespace-nowrap">S/N</th>
-              <th className="p-4 md:text-sm text-xs whitespace-nowrap">
+              <th className="p-4 text-xs whitespace-nowrap">S/N</th>
+              <th className="p-4 text-xs whitespace-nowrap">
                 Full Name
               </th>
-              <th className="p-4 md:text-sm text-xs whitespace-nowrap">
+              <th className="p-4 text-xs whitespace-nowrap">
                 Job Title
               </th>
-              <th className="p-4 md:text-sm text-xs whitespace-nowrap">
+              <th className="p-4 text-xs whitespace-nowrap">
                 Department
               </th>
-              <th className="p-4 md:text-sm text-xs whitespace-nowrap">Pay</th>
-              <th className="p-4 md:text-sm text-xs whitespace-nowrap">Date</th>
-              <th className="p-4 md:text-sm text-xs whitespace-nowrap">
+              <th className="p-4 text-xs whitespace-nowrap">Pay</th>
+              <th className="p-4 text-xs whitespace-nowrap">Date</th>
+              <th className="p-4 text-xs whitespace-nowrap">
                 Action
               </th>
             </tr>
@@ -296,7 +295,7 @@ const AllEmployees = () => {
                   colSpan={8}
                   className="p-4 text-center border-t border-black/10 text-gray-500"
                 >
-                  {error.message}
+                  {typeof error === "string" ? error : (error?.message ?? String(error))}
                 </td>
               </tr>
             ) : filteredList.length === 0 && !isLoading && !error ? (
@@ -323,27 +322,27 @@ const AllEmployees = () => {
                     <td>
                       {(currentPageFromApi - 1) * apiItemsPerPage + (index + 1)}
                     </td>
-                    <td className="p-4 md:text-sm text-xs whitespace-nowrap font-medium">
+                    <td className="p-4 text-xs whitespace-nowrap font-medium">
                       {employee.full_name}
                     </td>
 
-                    <td className="p-4 md:text-sm text-xs whitespace-nowrap">
+                    <td className="p-4 text-xs whitespace-nowrap">
                       {employee.jobTitle || "-"}
                     </td>
 
-                    <td className="p-4 md:text-sm text-xs whitespace-nowrap">
-                      {employee.company_branch || "-"}
+                    <td className="p-4 text-xs whitespace-nowrap">
+                      {employee.department || "-"}
                     </td>
 
-                    <td className="p-4 md:text-sm text-xs whitespace-nowrap">
+                    <td className="p-4 text-xs whitespace-nowrap">
                       N{formatterUtility(Number(employee.salary_amount)) || "-"}
                     </td>
 
-                    <td className="p-4 md:text-sm text-xs whitespace-nowrap text-pryClr font-bold">
+                    <td className="p-4 text-xs whitespace-nowrap text-pryClr font-bold">
                       {formatISODateToCustom(employee.created_at) || "-"}
                     </td>
 
-                    <td className="p-4 md:text-sm text-xs whitespace-nowrap">
+                    <td className="p-4 text-xs whitespace-nowrap">
                       <div className="flex items-center gap-2">
                         <button
                           className="cursor-pointer text-pryClr disabled:cursor-not-allowed disabled:opacity-25 w-10 h-10 flex justify-center items-center hover:bg-pryClr/10 rounded-md duration-200 transition-all"

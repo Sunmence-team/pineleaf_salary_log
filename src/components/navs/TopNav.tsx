@@ -1,20 +1,16 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { GoSearch } from 'react-icons/go';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useState, useRef, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useUser } from '../../context/UserContext';
 import { MdKeyboardArrowDown, MdOutlineLogout } from 'react-icons/md';
 import { FaRegBell } from 'react-icons/fa6';
-import { assests } from '../../assets/assets';
-import { BsActivity } from 'react-icons/bs';
 
 const TopNav = ({ pageName } : { pageName:string }) => {
     const { logout } = useUser();
     // const displayName = user?.fullName.split(" ")[0];
     const location = useLocation();
-    const navigate = useNavigate();
 
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-    const dropdownRef = useRef(null); // Ref to the dropdown container
+    const dropdownRef = useRef<HTMLButtonElement | null>(null); // Ref to the dropdown container
 
   
     useEffect(() => {
@@ -27,8 +23,9 @@ const TopNav = ({ pageName } : { pageName:string }) => {
     };
 
     useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        const handleClickOutside = (event: MouseEvent) => {
+            const target = event.target as Node | null;
+            if (dropdownRef.current && target && !dropdownRef.current.contains(target)) {
                 setIsDropdownOpen(false);
             }
         };

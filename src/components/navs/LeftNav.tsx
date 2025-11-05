@@ -1,7 +1,7 @@
 import React from 'react';
 import { assests } from '../../assets/assets';
 import { NavLink } from 'react-router-dom';
-import { MdAllInbox, MdArrowDownward, MdArrowOutward, MdArrowUpward, MdChat, MdFormatListBulletedAdd, MdOutlineAccountBalanceWallet, MdOutlineConnectWithoutContact, MdOutlineContactMail, MdOutlineDashboard, MdOutlineFileUpload, MdOutlineGroupWork, MdOutlineHome, MdOutlineLogout, MdOutlinePayments, MdOutlinePeopleAlt, MdVerified } from 'react-icons/md';
+import { MdOutlineDashboard, MdOutlinePeopleAlt } from 'react-icons/md';
 import { FaUsersCog } from 'react-icons/fa';
 import { RiSecurePaymentLine } from 'react-icons/ri';
 

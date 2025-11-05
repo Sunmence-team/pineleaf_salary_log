@@ -18,7 +18,20 @@ interface dashboardMetricsProps {
   total_estimated_salary:number
 }
 
-const UserContext = createContext();
+interface UserContextType {
+  user: userProps | null;
+  token: string | null;
+  role: string | null;
+  setToken: React.Dispatch<React.SetStateAction<string | null>>;
+  setUser: React.Dispatch<React.SetStateAction<userProps | null>>;
+  login: (token: string, user: userProps, metrics: dashboardMetricsProps) => void;
+  logout: () => void;
+  isLoggedIn: boolean;
+  refreshUser: (token: string) => Promise<void>;
+  dashboardMetrics: dashboardMetricsProps;
+}
+
+const UserContext = createContext<UserContextType | undefined>(undefined);
 
 export const UserProvider = ({ children }: userProviderProps) => {
   const [user, setUser] = useState<userProps | null>(null);

@@ -11,6 +11,7 @@ export interface employeeProps {
   phone: string;
   employmentType: string;
   jobTitle: string;
+  department: string;
   company_branch: string;
   salary_amount: string;
   created_at: string;

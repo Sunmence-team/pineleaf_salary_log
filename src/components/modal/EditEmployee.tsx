@@ -9,13 +9,12 @@ import {
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import api from "../../utilities/api";
-import axios from "axios";
 import { useUser } from "../../context/UserContext";
 
 interface EditEmployeeProps {
   isOpen: boolean;
   title?: string;
-  employee: employeeProps;
+  employee: employeeProps | null;
   confirmText?: string;
   onConfirm: () => void;
   onCancel: () => void;
@@ -34,7 +33,7 @@ const EditEmployee = ({
   const [isLoadingBanks, setIsLoadingBanks] = useState(true);
   const [isResolving, setIsResolving] = useState(false);
   const [selectedBankCode, setSelectedBankCode] = useState("");
-  const { token } = useUser();
+  const { token, logout } = useUser();
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -52,15 +51,27 @@ const EditEmployee = ({
     getBanks();
   }, []);
 
-  const formik = useFormik({
-    initialValues: employee,
+  const initialValues = employee ?? {
+    full_name: "",
+    email: "",
+    phone: "",
+    department: "",
+    bank_name: "",
+    account_number: "",
+    account_name: "",
+    salary_amount: "",
+  };
+
+  const formik = useFormik<any>({
+    initialValues,
+    enableReinitialize: true,
     validationSchema: Yup.object({
       full_name: Yup.string().required("Full Name is required"),
       email: Yup.string()
         .email("Invalid Email address")
         .required("Email address is required"),
       phone: Yup.string().required("Phone Number is required"),
-      company_branch: Yup.string().required("Company branch is required"),
+      department: Yup.string().required("Company branch is required"),
       bank_name: Yup.string().required("Bank Name is required"),
       account_number: Yup.string()
         .required("Account Number is required")
@@ -73,7 +84,7 @@ const EditEmployee = ({
 
       try {
         const response = await api.put(
-          `/edit_employers/${employee.id}`,
+          `/edit_employers/${employee?.id}`,
           values,
           {
             headers: {
@@ -88,7 +99,7 @@ const EditEmployee = ({
           resetForm();
           onConfirm();
         }
-      } catch (err: unknown) {
+      } catch (err: any) {
         console.error("Error fetching employees:", err);
         if (err.code === "ECONNABORTED") {
           toast.error("Request timed out. Please try again.");
@@ -106,7 +117,7 @@ const EditEmployee = ({
           }, 500);
         } else {
           toast.error(
-            `An unexpected error occurred while editing ${employee.full_name} details ` +
+            `An unexpected error occurred while editing ${employee?.full_name} details ` +
               err.message
           );
           console.error("Error during editing details: ", err);
@@ -167,11 +178,11 @@ const EditEmployee = ({
     <Modal onClose={onCancel}>
       <form onSubmit={formik.handleSubmit} className="flex flex-col gap-5">
         <div className="md:col-span-2">
-          <h3 className="text-2xl font-bold">{title}</h3>
+          <h3 className="md:text-2xl text-lg font-bold">{title}</h3>
         </div>
         <div className="grid md:grid-cols-2 grid-cols-1 gap-x-6 gap-y-5 h-[50vh] lg:h-[60vh] overflow-y-scroll styled-scrollbar pr-4">
           <div className="flex flex-col gap-2">
-            <label htmlFor="firstName" className="text-sm font-medium">
+            <label htmlFor="firstName" className="text-xs font-medium">
               Full Name
             </label>
             <input
@@ -181,15 +192,15 @@ const EditEmployee = ({
               value={formik.values.full_name}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              className="py-2 indent-3 border border-gray-300 rounded-md bg-transparent focus:outline-none focus:border-pryClr"
+              className="md:text-sm text-xs py-2 indent-3 border border-gray-300 rounded-md bg-transparent focus:outline-none focus:border-pryClr"
             />
             {formik.errors.full_name && formik.touched.full_name && (
-              <p className="text-sm text-red-600">{formik.errors.full_name}</p>
+              <p className="text-xs text-red-600">{formik.errors.full_name as string}</p>
             )}
           </div>
 
           <div className="flex flex-col gap-2">
-            <label htmlFor="email" className="text-sm font-medium">
+            <label htmlFor="email" className="text-xs font-medium">
               Email Address
             </label>
             <input
@@ -199,14 +210,14 @@ const EditEmployee = ({
               value={formik.values.email}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              className="py-2 indent-3 border border-gray-300 rounded-md bg-transparent focus:outline-none focus:border-pryClr"
+              className="md:text-sm text-xs py-2 indent-3 border border-gray-300 rounded-md bg-transparent focus:outline-none focus:border-pryClr"
             />
             {formik.errors.email && formik.touched.email && (
-              <p className="text-sm text-red-600">{formik.errors.email}</p>
+              <p className="text-xs text-red-600">{formik.errors.email as string}</p>
             )}
           </div>
           <div className="flex flex-col gap-2">
-            <label htmlFor="phone" className="text-sm font-medium">
+            <label htmlFor="phone" className="text-xs font-medium">
               Phone Number
             </label>
             <input
@@ -216,33 +227,33 @@ const EditEmployee = ({
               value={formik.values.phone}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              className="py-2 indent-3 border border-gray-300 rounded-md bg-transparent focus:outline-none focus:border-pryClr"
+              className="md:text-sm text-xs py-2 indent-3 border border-gray-300 rounded-md bg-transparent focus:outline-none focus:border-pryClr"
             />
             {formik.errors.phone && formik.touched.phone && (
-              <p className="text-sm text-red-600">{formik.errors.phone}</p>
+              <p className="text-xs text-red-600">{formik.errors.phone as string}</p>
             )}
           </div>
           <div className="flex flex-col gap-2">
-            <label htmlFor="company_branch" className="text-sm font-medium">
+            <label htmlFor="department" className="text-xs font-medium">
               Department
             </label>
             <input
               type="text"
-              name="company_branch"
-              id="company_branch"
-              value={formik.values.company_branch}
+              name="department"
+              id="department"
+              value={formik.values.department}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              className="py-2 indent-3 border border-gray-300 rounded-md bg-transparent focus:outline-none focus:border-pryClr"
+              className="md:text-sm text-xs py-2 indent-3 border border-gray-300 rounded-md bg-transparent focus:outline-none focus:border-pryClr"
             />
-            {formik.errors.company_branch && formik.touched.company_branch && (
-              <p className="text-sm text-red-600">
-                {formik.errors.company_branch}
+            {formik.errors.department && formik.touched.department && (
+              <p className="text-xs text-red-600">
+                {formik.errors.department as string}
               </p>
             )}
           </div>
           <div className="flex flex-col gap-2">
-            <label htmlFor="bankName" className="text-sm font-medium">
+            <label htmlFor="bankName" className="text-xs font-medium">
               Bank Name
             </label>
             <select
@@ -253,7 +264,7 @@ const EditEmployee = ({
               // defaultValue={""}
               value={formik.values.bank_name}
               disabled={isLoadingBanks}
-              className="py-2 indent-3 border border-gray-300 rounded-md bg-transparent focus:outline-none focus:border-pryClr cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+              className="md:text-sm text-xs py-2 indent-3 border border-gray-300 rounded-md bg-transparent focus:outline-none focus:border-pryClr cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
             >
               <option disabled value="">
                 {isLoadingBanks ? "Loading Banks..." : "Select Bank"}
@@ -265,11 +276,11 @@ const EditEmployee = ({
               ))}
             </select>
             {formik.errors.bank_name && formik.touched.bank_name && (
-              <p className="text-sm text-red-600">{formik.errors.bank_name}</p>
+              <p className="text-xs text-red-600">{formik.errors.bank_name as string}</p>
             )}
           </div>
           <div className="flex flex-col gap-2">
-            <label htmlFor="account_number" className="text-sm font-medium">
+            <label htmlFor="account_number" className="text-xs font-medium">
               Account Number
             </label>
             <input
@@ -280,16 +291,16 @@ const EditEmployee = ({
               value={formik.values.account_number}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              className="py-2 indent-3 border border-gray-300 rounded-md bg-transparent focus:outline-none focus:border-pryClr"
+              className="md:text-sm text-xs py-2 indent-3 border border-gray-300 rounded-md bg-transparent focus:outline-none focus:border-pryClr"
             />
             {formik.errors.account_number && formik.touched.account_number && (
-              <p className="text-sm text-red-600">
-                {formik.errors.account_number}
+              <p className="text-xs text-red-600">
+                {formik.errors.account_number as string}
               </p>
             )}
           </div>
           <div className="flex flex-col gap-2">
-            <label htmlFor="account_name" className="text-sm font-medium">
+            <label htmlFor="account_name" className="text-xs font-medium">
               Account Name
             </label>
             <input
@@ -298,18 +309,18 @@ const EditEmployee = ({
               name="account_name"
               value={isResolving ? "Resolving..." : formik.values.account_name}
               readOnly
-              className={`py-2 indent-3 border border-gray-300 rounded-md bg-transparent focus:outline-none focus:border-pryClr ${
+              className={`md:text-sm text-xs py-2 indent-3 border border-gray-300 rounded-md bg-transparent focus:outline-none focus:border-pryClr ${
                 isResolving ? "opacity-50" : ""
               }`}
             />
             {formik.errors.account_name && formik.touched.account_name && (
-              <p className="text-sm text-red-600">
-                {formik.errors.account_name}
+              <p className="text-xs text-red-600">
+                {formik.errors.account_name as string}
               </p>
             )}
           </div>
           <div className="flex flex-col gap-2">
-            <label htmlFor="salary_amount" className="text-sm font-medium">
+            <label htmlFor="salary_amount" className="text-xs font-medium">
               Estimate Pay
             </label>
             <input
@@ -319,11 +330,11 @@ const EditEmployee = ({
               value={formik.values.salary_amount}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              className="py-2 indent-3 border border-gray-300 rounded-md bg-transparent focus:outline-none focus:border-pryClr"
+              className="md:text-sm text-xs py-2 indent-3 border border-gray-300 rounded-md bg-transparent focus:outline-none focus:border-pryClr"
             />
             {formik.errors.salary_amount && formik.touched.salary_amount && (
-              <p className="text-sm text-red-600">
-                {formik.errors.salary_amount}
+              <p className="text-xs text-red-600">
+                {formik.errors.salary_amount as string}
               </p>
             )}
           </div>

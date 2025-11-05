@@ -1,16 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
 import PaginationControls from "../utilities/PaginationControls";
-import { FiCreditCard } from "react-icons/fi";
 import { toast } from "sonner";
 import { useUser } from "../context/UserContext";
 import api from "../utilities/api";
 import type { employeeProps } from "../store/sharedinterfaces";
 import ConfirmDialog from "../components/modal/ConfirmDialog";
 import {
-  formatISODateToCustom,
   formatterUtility,
 } from "../utilities/FormatterUtility";
-import { CgSpinner } from "react-icons/cg";
 import type { AxiosResponse } from "axios";
 import VerificationCodeDialog from "../components/modal/VerificationCodeDialog";
 
@@ -96,23 +93,25 @@ const ManagePayments: React.FC = () => {
   }, []);
 
   const openConfirm = () => setShowConfirmModal(true);
-  const closeConfirm = () => setShowConfirmModal(false);
 
   const handleCanPay = async (id: number) => {
     setUpdatingStatus(true);
     try {
-      let response: AxiosResponse;
+      let response: AxiosResponse | null = null;
       if (selectedEmployee?.paying === 0) {
         response = await api.put(`/employees/${id}/paying`);
       } else if (selectedEmployee?.paying === 1) {
         response = await api.put(`/employers/${id}/paying`);
+      } else {
+        toast.error("Invalid employee paying status.");
+        return;
       }
-      const resData = await response.data;
-      if (response.status === 200) {
+      
+      if (response && response.status === 200) {
         toast.success("Employee paying status updated successfully");
         fetchEmployees();
       }
-    } catch (err: unknown) {
+    } catch (err: any) {
       console.log(err);
       if (err.response) {
         toast.error(
@@ -201,19 +200,19 @@ const ManagePayments: React.FC = () => {
         <table className="w-full text-center">
           <thead>
             <tr className="bg-white/61 h-[77px]">
-              <th className="p-4 md:text-sm text-xs whitespace-nowrap">S/N</th>
-              <th className="p-4 md:text-sm text-xs whitespace-nowrap">
+              <th className="p-4 text-xs whitespace-nowrap">S/N</th>
+              <th className="p-4 text-xs whitespace-nowrap">
                 Full Name
               </th>
-              <th className="p-4 md:text-sm text-xs whitespace-nowrap">
+              <th className="p-4 text-xs whitespace-nowrap">
                 Job Title
               </th>
-              <th className="p-4 md:text-sm text-xs whitespace-nowrap">
+              <th className="p-4 text-xs whitespace-nowrap">
                 Department
               </th>
-              <th className="p-4 md:text-sm text-xs whitespace-nowrap">Pay</th>
-              <th className="p-4 md:text-sm text-xs whitespace-nowrap">Date</th>
-              <th className="p-4 md:text-sm text-xs whitespace-nowrap">
+              <th className="p-4 text-xs whitespace-nowrap">Pay</th>
+              {/* <th className="p-4 text-xs whitespace-nowrap">Date</th> */}
+              <th className="p-4 text-xs whitespace-nowrap">
                 Action
               </th>
             </tr>
@@ -223,7 +222,7 @@ const ManagePayments: React.FC = () => {
             {isLoading ? (
               <tr className="bg-white/61">
                 <td
-                  colSpan={6}
+                  colSpan={5}
                   className="p-4 text-center border-t border-black/10 text-gray-500"
                 >
                   Loading employees...
@@ -232,7 +231,7 @@ const ManagePayments: React.FC = () => {
             ) : error ? (
               <tr className="bg-white/61">
                 <td
-                  colSpan={6}
+                  colSpan={5}
                   className="p-4 text-center border-t border-black/10 text-gray-500"
                 >
                   {error?.message ?? "Error loading employees"}
@@ -241,7 +240,7 @@ const ManagePayments: React.FC = () => {
             ) : employees.length === 0 ? (
               <tr>
                 <td
-                  colSpan={6}
+                  colSpan={5}
                   className="text-center bg-white/61 py-4 border-y border-black/10"
                 >
                   No employees found.
@@ -260,30 +259,30 @@ const ManagePayments: React.FC = () => {
                     {(currentPageFromApi - 1) * apiItemsPerPage + (index + 1)}
                   </td>
 
-                  <td className="p-4 md:text-sm text-xs whitespace-nowrap font-medium">
+                  <td className="p-4 text-xs whitespace-nowrap font-medium">
                     {employee.full_name}
                   </td>
 
-                  <td className="p-4 md:text-sm text-xs whitespace-nowrap">
+                  <td className="p-4 text-xs whitespace-nowrap">
                     {employee.jobTitle ?? "-"}
                   </td>
 
-                  <td className="p-4 md:text-sm text-xs whitespace-nowrap">
-                    {employee.company_branch ?? "-"}
+                  <td className="p-4 text-xs whitespace-nowrap">
+                    {employee.department ?? "-"}
                   </td>
 
-                  <td className="p-4 md:text-sm text-xs whitespace-nowrap">
+                  <td className="p-4 text-xs whitespace-nowrap">
                     N
                     {employee.paying === 0
                       ? 0
                       : formatterUtility(Number(employee.salary_amount)) ?? "-"}
                   </td>
 
-                  <td className="p-4 md:text-sm text-xs whitespace-nowrap text-pryClr font-bold">
+                  {/* <td className="p-4 text-xs whitespace-nowrap text-pryClr font-bold">
                     {formatISODateToCustom(employee.created_at) ?? "-"}
-                  </td>
+                  </td> */}
 
-                  <td className="p-4 md:text-sm text-xs whitespace-nowrap text-pryClr font-bold">
+                  <td className="p-4 text-xs whitespace-nowrap text-pryClr font-bold">
                     <button
                       className={`cursor-pointer w-full disabled:cursor-not-allowed disabled:opacity-25 text-sm py-3 px-2 flex justify-center items-center rounded-md duration-200 transition-all text-white ${
                         employee.paying === 0 ? "bg-pryClr" : "bg-red-700"
@@ -307,7 +306,7 @@ const ManagePayments: React.FC = () => {
 
           <tfoot>
             <tr className={"bg-white/61 h-[77px] border-t border-black/10"}>
-              <td className="text-center p-4" colSpan={6}>
+              <td className="text-center p-4" colSpan={5}>
                 <PaginationControls
                   currentPage={currentPageFromApi}
                   totalPages={totalApiPages}

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState } from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { toast } from "sonner";
@@ -7,8 +7,6 @@ import {
   resolveAccountNumber,
 } from "../utilities/paystackHelper";
 import type { bankProps } from "../store/sharedinterfaces";
-import axios from "axios";
-import { SiTrueup } from "react-icons/si";
 import api from "../utilities/api";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
@@ -31,10 +29,26 @@ const AddEmployee = () => {
   const [isLoadingBanks, setIsLoadingBanks] = useState(true);
   const [isResolving, setIsResolving] = useState(false);
   const [selectedBankCode, setSelectedBankCode] = useState("");
-  const [countries, setCountries] = useState<{}[]>([]);
+  const [countries, setCountries] = useState<string[]>([]);
   const [loadingCountries, setLoadingCountries] = useState(false);
-  const [states, setStates] = useState<{}[]>([]);
+  const [states, setStates] = useState<string[]>([]);
   const [loadingStates, setLoadingStates] = useState(false);
+  const branches = [
+    'HQ - Onitsha',
+    'Mgbuka',
+    'Awka',
+    'Asaba',
+    'Owerri',
+    'Port Harcourt',
+    'Lagos Ajah',
+    'Lagos Apapa',
+    'Enugwu-Ukwu',
+    'Abuja',
+    'Abia',
+    'Nnewi',
+    'Enugu',
+  ]
+
   useEffect(() => {
     const fetchCountries = async (): Promise<void> => {
       setLoadingCountries(true);
@@ -94,9 +108,13 @@ const AddEmployee = () => {
       lastName: "",
       email: "",
       phoneNumber: "",
+      address: "",
+      state: "",
+      country: "",
       gender: "",
       dob: "",
       jobTitle: "",
+      company_branch: "",
       department: "",
       employmentType: "",
       employmentDate: "",
@@ -104,9 +122,6 @@ const AddEmployee = () => {
       account_name: "",
       account_number: "",
       salary_amount: "",
-      address: "",
-      state: "",
-      country: "",
     },
     validationSchema: Yup.object({
       firstName: Yup.string().required("First Name is required"),
@@ -118,6 +133,7 @@ const AddEmployee = () => {
       gender: Yup.string().required("Gender is required"),
       dob: Yup.string().required("Date of Birth is required"),
       jobTitle: Yup.string().required("Job Title is required"),
+      company_branch: Yup.string().required("Company branch is required"),
       department: Yup.string().required("Department is required"),
       employmentType: Yup.string().required("Employment Type is required"),
       employmentDate: Yup.string().required("Employment Date is required"),
@@ -139,14 +155,15 @@ const AddEmployee = () => {
           phone: values.phoneNumber,
           gender: values.gender,
           dob: values.dob,
-          job_title: values.jobTitle,
-          employment_type: values.employmentType,
-          employment_date: values.employmentDate,
+          jobTitle: values.jobTitle,
+          employmentType: values.employmentType,
+          employmentDate: values.employmentDate,
+          department: values.department,
           bank_name: values.bank_name,
           account_name: values.account_name,
           account_number: values.account_number,
           salary_amount: values.salary_amount,
-          company_branch: values.department,
+          company_branch: values.company_branch,
           address: values.address,
           state: values.state,
           country: values.country,
@@ -245,7 +262,7 @@ const AddEmployee = () => {
           const result = await response.json();
           if (result.error) throw new Error(result.msg);
 
-          const stateList = result.data?.states?.map((s) => s.name) || [];
+          const stateList = result.data?.states?.map((s:{name:string}) => s.name) || [];
           setStates(stateList);
           formik.setFieldValue("state", "");
         } catch (err) {
@@ -505,6 +522,35 @@ const AddEmployee = () => {
             />
             {formik.touched.department && formik.errors.department && (
               <p className="text-sm text-red-600">{formik.errors.department}</p>
+            )}
+          </div>
+
+          {/* company_branch */}
+          <div className="md:col-span-2 flex flex-col gap-2">
+            <label htmlFor="company_branch" className="text-sm font-medium">
+              Company Branch
+            </label>
+            <select
+              id="company_branch"
+              name="company_branch"
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              value={formik.values.company_branch}
+              defaultValue={""}
+              disabled={branches.length === 0}
+              className="py-2 indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr disabled:bg-gray-100 disabled:cursor-not-allowed"
+            >
+               <option disabled value="">
+                Pick Branch
+              </option>
+              {branches.map((branch) => (
+                <option key={branch} value={branch}>
+                  {branch}
+                </option>
+              ))}
+            </select>
+            {formik.touched.company_branch && formik.errors.company_branch && (
+              <p className="text-sm text-red-600">{formik.errors.company_branch}</p>
             )}
           </div>
 
