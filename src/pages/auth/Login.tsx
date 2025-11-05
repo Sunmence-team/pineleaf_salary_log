@@ -16,8 +16,10 @@ const Login = () => {
   const location = useLocation();
   const { login } = useUser();
   interface userMetrics {
-    total_employers: number;
+    total_employees: number;
     total_salary_paid: number;
+    no_CompletedPayments: number;
+    total_estimated_salary: number;
   }
 
   interface user {
@@ -55,8 +57,10 @@ const Login = () => {
                 toast.dismiss(redirectToast);
                 const token: string = response.data.token;
                 const metrics: userMetrics = {
-                  total_employers: response.data.total_employers,
+                  total_employees: response.data.total_employees,
                   total_salary_paid: response.data.total_salary_paid,
+                  no_CompletedPayments: response.data.no_CompletedPayments,
+                  total_estimated_salary: response.data.total_estimated_salary,
                 };
                 const user: user = {
                   role: response.data.role,

@@ -1,22 +1,22 @@
 @import "tailwindcss";
 
 @theme {
-  --color-pryClr: #2F5318;
-  --color-secClr: #E6FFF6F6;
-  --color-tetClr: #F5DD00; 
+  --color-pryClr: #2f5318;
+  --color-secClr: #e6fff6f6;
+  --color-tetClr: #f5dd00;
 }
 
-*{
+* {
   font-family: "Lato", sans-serif;
   font-optical-sizing: auto;
   font-style: normal;
 }
 
-.no-scrollbar::-webkit-scrollbar{
-  @apply hidden
+.no-scrollbar::-webkit-scrollbar {
+  @apply hidden;
 }
 
-input[type="number"].no-marker{
+input[type="number"].no-marker {
   -moz-appearance: textfield;
   -webkit-appearance: none;
   appearance: none;
@@ -34,4 +34,12 @@ input[type="number"].no-spin::-webkit-outer-spin-button {
 }
 .styled-scrollbar::-webkit-scrollbar-thumb {
   @apply bg-[#cbd5e1] rounded-full;
+}
+
+textarea {
+  resize: none;
+}
+
+button:disabled {
+  cursor: not-allowed;
 }

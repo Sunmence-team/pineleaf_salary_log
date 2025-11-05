@@ -19,4 +19,13 @@ export interface employeeProps {
   bank_name: string;
   account_number: string;
   account_name: string;
+  paying: number;
+}
+
+export interface transactionsProps {
+  employer_id: string;
+  payment_date: string;
+  employee_name: string;
+  amount: string;
+  employer: employeeProps;
 }
