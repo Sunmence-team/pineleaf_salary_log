@@ -13,29 +13,43 @@ function App() {
     <>
       <Toaster />
       <Routes>
-        <Route 
-          path={"/"}
-          element={<Login />}
-        />
+        <Route path={"/"} element={<Login />} />
         <Route
           path={"/overview"}
           element={<MainLayout pageName="Overview" children={<Dashboard />} />}
         />
         <Route
           path={"/addemployee"}
-          element={<MainLayout pageName="Add Employee" children={<AddEmployee />} />}
+          element={
+            <MainLayout pageName="Add Employee" children={<AddEmployee />} />
+          }
         />
         <Route
           path={"/managemployees"}
-          element={<MainLayout pageName="Manage Employee" children={<AllEmployees />} />}
+          element={
+            <MainLayout
+              pageName="Manage Employee"
+              children={<AllEmployees />}
+            />
+          }
         />
         <Route
           path={"/managepayments"}
-          element={<MainLayout pageName="Manage Payments" children={<ManagePayments />} />}
+          element={
+            <MainLayout
+              pageName="Manage Payments"
+              children={<ManagePayments />}
+            />
+          }
         />
         <Route
           path={"/alltransactions"}
-          element={<MainLayout pageName="All Transactions" children={<AllTransactions />} />}
+          element={
+            <MainLayout
+              pageName="All Transactions"
+              children={<AllTransactions />}
+            />
+          }
         />
       </Routes>
     </>
