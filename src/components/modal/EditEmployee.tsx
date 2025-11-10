@@ -32,6 +32,25 @@ const EditEmployee = ({
   const [banks, setBanks] = useState<bankProps[]>([]);
   const [isLoadingBanks, setIsLoadingBanks] = useState(true);
   const [isResolving, setIsResolving] = useState(false);
+  const [countries, setCountries] = useState<string[]>([]);
+  const [loadingCountries, setLoadingCountries] = useState(false);
+  const [states, setStates] = useState<string[]>([]);
+  const [loadingStates, setLoadingStates] = useState(false);
+  const branches = [
+    "HQ - Onitsha",
+    "Mgbuka",
+    "Awka",
+    "Asaba",
+    "Owerri",
+    "Port Harcourt",
+    "Lagos Ajah",
+    "Lagos Apapa",
+    "Enugwu-Ukwu",
+    "Abuja",
+    "Abia",
+    "Nnewi",
+    "Enugu",
+  ];
   const [selectedBankCode, setSelectedBankCode] = useState("");
   const { token, logout } = useUser();
 
@@ -51,14 +70,60 @@ const EditEmployee = ({
     getBanks();
   }, []);
 
+  useEffect(() => {
+    const fetchCountries = async (): Promise<void> => {
+      setLoadingCountries(true);
+      try {
+        const response = await fetch(
+          "https://countriesnow.space/api/v0.1/countries"
+        );
+
+        if (!response.ok) {
+          throw new Error(`Request failed with status ${response.status}`);
+        }
+
+        const resData: CountryApiResponse = await response.json();
+
+        if (resData.error) {
+          throw new Error(resData.msg || "Failed to fetch countries");
+        }
+
+        const countryList: CountryItem[] = resData.data
+          .map((c) => ({ name: c.country, isoCode: c.iso2 }))
+          .sort((a, b) => a.name.localeCompare(b.name));
+
+        const countryMap = new Map<string, string>();
+        countryList.forEach((c) => countryMap.set(c.name, c.isoCode));
+
+        setCountries(countryList.map((c) => c.name));
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "An unknown error occurred";
+        console.error("Error fetching countries:", message);
+      } finally {
+        setLoadingCountries(false);
+      }
+    };
+    fetchCountries();
+  }, []);
+
   const initialValues = employee ?? {
     full_name: "",
     email: "",
     phone: "",
+    address: "",
+    state: "",
+    country: "",
+    gender: "",
+    dob: "",
+    jobTitle: "",
+    company_branch: "",
     department: "",
     bank_name: "",
     account_number: "",
     account_name: "",
+    employmentType: "",
+    employmentDate: "",
     salary_amount: "",
   };
 
@@ -71,6 +136,12 @@ const EditEmployee = ({
         .email("Invalid Email address")
         .required("Email address is required"),
       phone: Yup.string().required("Phone Number is required"),
+      gender: Yup.string().required("Gender is required"),
+      dob: Yup.string().required("Date of Birth is required"),
+      jobTitle: Yup.string().required("Job Title is required"),
+      company_branch: Yup.string().required("Company branch is required"),
+      employmentType: Yup.string().required("Employment Type is required"),
+      employmentDate: Yup.string().required("Employment Date is required"),
       department: Yup.string().required("Company branch is required"),
       bank_name: Yup.string().required("Bank Name is required"),
       account_number: Yup.string()
@@ -78,6 +149,9 @@ const EditEmployee = ({
         .matches(/^\d{8,20}$/, "Account Number must be 8-20 digits"),
       account_name: Yup.string().required("Account Name is required"),
       salary_amount: Yup.string().required("Employee estimate pay is required"),
+      country: Yup.string().required("Country is required"),
+      state: Yup.string().required("State is required"),
+      address: Yup.string().required("Adress is required"),
     }),
     onSubmit: async (values, { resetForm }) => {
       console.log("employee create values: ", values);
@@ -125,6 +199,40 @@ const EditEmployee = ({
       }
     },
   });
+
+  useEffect(() => {
+    if (formik.values.country) {
+      const fetchStates = async () => {
+        setLoadingStates(true);
+        try {
+          const response = await fetch(
+            "https://countriesnow.space/api/v0.1/countries/states",
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ country: formik.values.country }),
+            }
+          );
+          const result = await response.json();
+          if (result.error) throw new Error(result.msg);
+
+          const stateList =
+            result.data?.states?.map((s: { name: string }) => s.name) || [];
+          setStates(stateList);
+          formik.setFieldValue("state", "");
+        } catch (err) {
+          setStates([]);
+          formik.setFieldValue("state", "");
+        } finally {
+          setLoadingStates(false);
+        }
+      };
+      fetchStates();
+    } else {
+      setStates([]);
+      formik.setFieldValue("state", "");
+    }
+  }, [formik.values.country]);
 
   useEffect(() => {
     const resolveAccount = async () => {
@@ -195,7 +303,9 @@ const EditEmployee = ({
               className="md:text-sm text-xs py-2 indent-3 border border-gray-300 rounded-md bg-transparent focus:outline-none focus:border-pryClr"
             />
             {formik.errors.full_name && formik.touched.full_name && (
-              <p className="text-xs text-red-600">{formik.errors.full_name as string}</p>
+              <p className="text-xs text-red-600">
+                {formik.errors.full_name as string}
+              </p>
             )}
           </div>
 
@@ -213,7 +323,9 @@ const EditEmployee = ({
               className="md:text-sm text-xs py-2 indent-3 border border-gray-300 rounded-md bg-transparent focus:outline-none focus:border-pryClr"
             />
             {formik.errors.email && formik.touched.email && (
-              <p className="text-xs text-red-600">{formik.errors.email as string}</p>
+              <p className="text-xs text-red-600">
+                {formik.errors.email as string}
+              </p>
             )}
           </div>
           <div className="flex flex-col gap-2">
@@ -230,9 +342,123 @@ const EditEmployee = ({
               className="md:text-sm text-xs py-2 indent-3 border border-gray-300 rounded-md bg-transparent focus:outline-none focus:border-pryClr"
             />
             {formik.errors.phone && formik.touched.phone && (
-              <p className="text-xs text-red-600">{formik.errors.phone as string}</p>
+              <p className="text-xs text-red-600">
+                {formik.errors.phone as string}
+              </p>
             )}
           </div>
+          <div className="flex flex-col gap-2">
+            <label htmlFor="gender" className="text-sm font-medium">
+              Gender
+            </label>
+            <select
+              name="gender"
+              id="gender"
+              value={formik.values.gender}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              className="py-2 indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
+            >
+              <option value="">Select Gender</option>
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+            </select>
+            {formik.touched.gender && formik.errors.gender && (
+              <p className="text-sm text-red-600">{formik.errors.gender}</p>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label htmlFor="dob" className="text-sm font-medium">
+              Date of Birth
+            </label>
+            <input
+              type="date"
+              name="dob"
+              id="dob"
+              value={formik.values.dob}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              className="py-2 indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
+            />
+            {formik.touched.dob && formik.errors.dob && (
+              <p className="text-sm text-red-600">{formik.errors.dob}</p>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label htmlFor="dob" className="text-sm font-medium">
+              Country
+            </label>
+            <select
+              name="country"
+              id="country"
+              value={formik.values.country}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              className="py-2 indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
+            >
+              <option selected>
+                {loadingCountries
+                  ? "Fetching countries..."
+                  : "Choose your country"}
+              </option>
+              {countries.map((c, idx) => (
+                <option value={c} key={idx}>
+                  {c}
+                </option>
+              ))}
+            </select>
+            {formik.touched.country && formik.errors.country && (
+              <p className="text-sm text-red-600">{formik.errors.country}</p>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label htmlFor="dob" className="text-sm font-medium">
+              State
+            </label>
+            <select
+              name="state"
+              id="state"
+              value={formik.values.state}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              className="py-2 indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
+            >
+              <option selected>
+                {loadingStates
+                  ? "Fetching country states..."
+                  : "Select your state"}
+              </option>
+              {states.map((s, idx) => (
+                <option value={s} key={idx}>
+                  {s}
+                </option>
+              ))}
+            </select>
+            {formik.touched.state && formik.errors.state && (
+              <p className="text-sm text-red-600">{formik.errors.state}</p>
+            )}
+          </div>
+
+          <div className="md:col-span-2 flex flex-col gap-2">
+            <label htmlFor="address" className="text-sm font-medium">
+              Address
+            </label>
+            <textarea
+              name="address"
+              id="address"
+              value={formik.values.address}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              className="py-4  indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
+            ></textarea>
+            {formik.touched.address && formik.errors.address && (
+              <p className="text-sm text-red-600">{formik.errors.address}</p>
+            )}
+          </div>
+
           <div className="flex flex-col gap-2">
             <label htmlFor="department" className="text-xs font-medium">
               Department
@@ -252,6 +478,99 @@ const EditEmployee = ({
               </p>
             )}
           </div>
+          <div className="flex flex-col gap-2">
+            <label htmlFor="jobTitle" className="text-sm font-medium">
+              Job Title
+            </label>
+            <input
+              type="text"
+              name="jobTitle"
+              id="jobTitle"
+              value={formik.values.jobTitle}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              className="py-2 indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
+            />
+            {formik.touched.jobTitle && formik.errors.jobTitle && (
+              <p className="text-sm text-red-600">{formik.errors.jobTitle}</p>
+            )}
+          </div>
+          <div className="md:col-span-2 flex flex-col gap-2">
+            <label htmlFor="company_branch" className="text-sm font-medium">
+              Company Branch
+            </label>
+            <select
+              id="company_branch"
+              name="company_branch"
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              value={formik.values.company_branch}
+              defaultValue={""}
+              disabled={branches.length === 0}
+              className="py-2 indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr disabled:bg-gray-100 disabled:cursor-not-allowed"
+            >
+              <option disabled value="">
+                Pick Branch
+              </option>
+              {branches.map((branch) => (
+                <option key={branch} value={branch}>
+                  {branch}
+                </option>
+              ))}
+            </select>
+            {formik.touched.company_branch && formik.errors.company_branch && (
+              <p className="text-sm text-red-600">
+                {formik.errors.company_branch}
+              </p>
+            )}
+          </div>
+
+          {/* Employment Type */}
+          <div className="flex flex-col gap-2">
+            <label htmlFor="employmentType" className="text-sm font-medium">
+              Employment Type
+            </label>
+            <select
+              name="employmentType"
+              id="employmentType"
+              value={formik.values.employmentType}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              className="py-2 indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
+            >
+              <option value="">Select Employment Type</option>
+              <option value="remote">Remote</option>
+              <option value="onsite">On-site</option>
+              <option value="hybrid">Hybrid</option>
+            </select>
+            {formik.touched.employmentType && formik.errors.employmentType && (
+              <p className="text-sm text-red-600">
+                {formik.errors.employmentType}
+              </p>
+            )}
+          </div>
+
+          {/* Employment Date */}
+          <div className="flex flex-col gap-2">
+            <label htmlFor="employmentDate" className="text-sm font-medium">
+              Date Employed
+            </label>
+            <input
+              type="date"
+              name="employmentDate"
+              id="employmentDate"
+              value={formik.values.employmentDate}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              className="py-2 indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
+            />
+            {formik.touched.employmentDate && formik.errors.employmentDate && (
+              <p className="text-sm text-red-600">
+                {formik.errors.employmentDate}
+              </p>
+            )}
+          </div>
+
           <div className="flex flex-col gap-2">
             <label htmlFor="bankName" className="text-xs font-medium">
               Bank Name
@@ -276,7 +595,9 @@ const EditEmployee = ({
               ))}
             </select>
             {formik.errors.bank_name && formik.touched.bank_name && (
-              <p className="text-xs text-red-600">{formik.errors.bank_name as string}</p>
+              <p className="text-xs text-red-600">
+                {formik.errors.bank_name as string}
+              </p>
             )}
           </div>
           <div className="flex flex-col gap-2">
