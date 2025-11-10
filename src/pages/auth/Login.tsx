@@ -111,9 +111,9 @@ const Login = () => {
   });
 
   return (
-    <div className="bg-secClr min-h-screen flex items-center justify-center">
+    <div className="bg-pryClr/30 min-h-screen flex items-center justify-center p-4">
       <div
-        className="mx-auto bg-white rounded-lg shadow-md md:p-8 p-10 relative min-w-xl"
+        className="mx-auto bg-white rounded-lg shadow-md md:p-8 p-10 relative md:w-xl w-full"
         style={{ boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)" }}
       >
         <img

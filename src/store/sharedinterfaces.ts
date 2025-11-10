@@ -9,9 +9,11 @@ export interface employeeProps {
   full_name: string;
   email: string;
   phone: string;
+  employmentDate: string;
   employmentType: string;
   jobTitle: string;
   department: string;
+  state: string;
   company_branch: string;
   salary_amount: string;
   created_at: string;

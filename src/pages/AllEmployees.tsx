@@ -72,7 +72,7 @@ const AllEmployees = () => {
 
     try {
       const response = await api.get(
-        `/all_employers?name=${searchQuery}&page=${currentPageFromApi}&per_page=${apiItemsPerPage}`,
+        `/all_employers?&page=${currentPageFromApi}&per_page=${apiItemsPerPage}`,
         {
           headers: {
             "Content-Type": "application/json",
@@ -117,7 +117,7 @@ const AllEmployees = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [token, currentPageFromApi, apiItemsPerPage, searchQuery]);
+  }, [token, currentPageFromApi, apiItemsPerPage]);
 
   useEffect(() => {
     const delayDebounce = setTimeout(() => {
@@ -131,12 +131,23 @@ const AllEmployees = () => {
     setCurrentPageFromApi(1);
   }, [searchQuery, selectedStatus]);
 
+  // const filteredList = employees.filter((data) => {
+  //   const statusMatches =
+  //     selectedStatus === "all" ||
+  //     data.employmentType?.toLowerCase() === selectedStatus.toLowerCase();
+
+  //   return statusMatches;
+  // });
   const filteredList = employees.filter((data) => {
     const statusMatches =
       selectedStatus === "all" ||
       data.employmentType?.toLowerCase() === selectedStatus.toLowerCase();
-
-    return statusMatches;
+      
+    const query = searchQuery.trim().toLowerCase();
+    const nameMatches =
+      query === "" ||
+      (data.full_name || "").toLowerCase().includes(query);
+    return statusMatches && nameMatches;
   });
 
   // Function to show the confirmation modal
@@ -314,9 +325,7 @@ const AllEmployees = () => {
                 return (
                   <tr
                     key={employee.id}
-                    className={`${
-                      index % 2 === 0 ? "bg-black/5" : "bg-[#F8F8F8]"
-                    } h-[50px] border-y border-black/10`}
+                    className={`${index % 2 === 0 ? "bg-black/5" : "bg-[#F8F8F8]"} h-[50px] border-y border-black/10`}
                     onMouseOver={() => setSelectedEmployee(employee)}
                   >
                     <td>

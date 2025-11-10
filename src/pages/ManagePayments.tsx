@@ -10,6 +10,7 @@ import {
 } from "../utilities/FormatterUtility";
 import type { AxiosResponse } from "axios";
 import VerificationCodeDialog from "../components/modal/VerificationCodeDialog";
+import { RiUserAddLine, RiUserMinusLine } from "react-icons/ri";
 
 const ManagePayments: React.FC = () => {
   const { token, logout } = useUser();
@@ -90,7 +91,7 @@ const ManagePayments: React.FC = () => {
 
   useEffect(() => {
     fetchEmployees();
-  }, []);
+  }, [fetchEmployees]);
 
   const openConfirm = () => setShowConfirmModal(true);
 
@@ -222,7 +223,7 @@ const ManagePayments: React.FC = () => {
             {isLoading ? (
               <tr className="bg-white/61">
                 <td
-                  colSpan={5}
+                  colSpan={6}
                   className="p-4 text-center border-t border-black/10 text-gray-500"
                 >
                   Loading employees...
@@ -231,7 +232,7 @@ const ManagePayments: React.FC = () => {
             ) : error ? (
               <tr className="bg-white/61">
                 <td
-                  colSpan={5}
+                  colSpan={6}
                   className="p-4 text-center border-t border-black/10 text-gray-500"
                 >
                   {error?.message ?? "Error loading employees"}
@@ -240,7 +241,7 @@ const ManagePayments: React.FC = () => {
             ) : employees.length === 0 ? (
               <tr>
                 <td
-                  colSpan={5}
+                  colSpan={6}
                   className="text-center bg-white/61 py-4 border-y border-black/10"
                 >
                   No employees found.
@@ -259,19 +260,19 @@ const ManagePayments: React.FC = () => {
                     {(currentPageFromApi - 1) * apiItemsPerPage + (index + 1)}
                   </td>
 
-                  <td className="p-4 text-xs whitespace-nowrap font-medium">
+                  <td className="p-2 text-xs whitespace-nowrap font-medium">
                     {employee.full_name}
                   </td>
 
-                  <td className="p-4 text-xs whitespace-nowrap">
+                  <td className="p-2 text-xs whitespace-nowrap">
                     {employee.jobTitle ?? "-"}
                   </td>
 
-                  <td className="p-4 text-xs whitespace-nowrap">
+                  <td className="p-2 text-xs whitespace-nowrap">
                     {employee.department ?? "-"}
                   </td>
 
-                  <td className="p-4 text-xs whitespace-nowrap">
+                  <td className="p-2 text-xs whitespace-nowrap">
                     N
                     {employee.paying === 0
                       ? 0
@@ -284,8 +285,8 @@ const ManagePayments: React.FC = () => {
 
                   <td className="p-4 text-xs whitespace-nowrap text-pryClr font-bold">
                     <button
-                      className={`cursor-pointer w-full disabled:cursor-not-allowed disabled:opacity-25 text-sm py-3 px-2 flex justify-center items-center rounded-md duration-200 transition-all text-white ${
-                        employee.paying === 0 ? "bg-pryClr" : "bg-red-700"
+                      className={`cursor-pointer disabled:cursor-not-allowed disabled:opacity-25 text- mx-auto w-10 h-10 flex justify-center items-center rounded-md duration-200 transition-all ${
+                        employee.paying === 0 ? "text-pryClr hover:bg-pryClr/10" : "text-red-700 hover:bg-red-700/10"
                       }`}
                       title={
                         employee.paying === 0
@@ -295,9 +296,23 @@ const ManagePayments: React.FC = () => {
                       onClick={() => setShowUpdateConfirmModal(true)}
                     >
                       {employee.paying === 0
-                        ? "Include Employee"
-                        : "Exclude Employee"}
+                        ? 
+                        // "Include Employee"
+                        <RiUserAddLine size={18} />
+                        : 
+                        // "Exclude Employee"
+                        <RiUserMinusLine size={18} />
+                      }
                     </button>
+                    {/* <button
+                                    
+                                    type="button"
+                                    disabled={isLoading || isDeleting}
+                                    onClick={() => confirmDeleteContact(contact)}
+                                    title='Delete contact'
+                                  >
+                                    <RiUserAddLine size={18} />
+                                  </button> */}
                   </td>
                 </tr>
               ))
@@ -306,7 +321,7 @@ const ManagePayments: React.FC = () => {
 
           <tfoot>
             <tr className={"bg-white/61 h-[77px] border-t border-black/10"}>
-              <td className="text-center p-4" colSpan={5}>
+              <td className="text-center p-4" colSpan={6}>
                 <PaginationControls
                   currentPage={currentPageFromApi}
                   totalPages={totalApiPages}

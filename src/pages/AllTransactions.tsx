@@ -20,7 +20,7 @@ const AllTransactions: React.FC<AllCotransactionsProps> = ({ isRecent }) => {
   const { token } = useUser();
   const [transactions, setTransactions] = useState<groupTransactionProps[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<any>(null);
+  // const [error, setError] = useState<any>(null);
   const [selectedMonth, setSelectedMonth] = useState("");
   const [currentPageFromApi, setCurrentPageFromApi] = useState(1);
   const [totalApiPages, setTotalApiPages] = useState(1);
@@ -29,7 +29,7 @@ const AllTransactions: React.FC<AllCotransactionsProps> = ({ isRecent }) => {
 
   const fetchTransactions = useCallback(async () => {
     setIsLoading(true);
-    setError(null);
+    // setError(null);
 
     try {
       const resopnse = await api.get(
@@ -65,7 +65,7 @@ const AllTransactions: React.FC<AllCotransactionsProps> = ({ isRecent }) => {
       } else {
         toast.error("Unexpected error occurred. Please try again.");
       }
-      setError(err);
+      // setError(err);
     } finally {
       setIsLoading(false);
     }
@@ -141,7 +141,7 @@ const AllTransactions: React.FC<AllCotransactionsProps> = ({ isRecent }) => {
     if (selectedMonth && selectedMonth !== "all") {
       const fetchTransactions = async () => {
         setIsLoading(true);
-        setError(null);
+        // setError(null);
 
         try {
           const resopnse = await api.get(
@@ -182,7 +182,7 @@ const AllTransactions: React.FC<AllCotransactionsProps> = ({ isRecent }) => {
           } else {
             toast.error("Unexpected error occurred. Please try again.");
           }
-          setError(err);
+          // setError(err);
         } finally {
           setIsLoading(false);
         }
@@ -195,21 +195,17 @@ const AllTransactions: React.FC<AllCotransactionsProps> = ({ isRecent }) => {
 
   return (
     <div
-      className={`flex flex-col gap-8  ${isRecent ? "p-0" : "px-4 lg:px-6"}`}
+      className={`flex flex-col gap-8 ${isRecent ? "p-0" : "px-4 lg:px-6"}`}
     >
       <div className="overflow-x-auto rounded-lg no-scrollbar w-full lg:p-0 pe-4">
         {!isRecent ? (
-          <div className="flex items-center justify-between my-7">
-            <h2 className="text-gray-700 text-xl font-medium w-2/3 lg:w-1/2">
-              Below are the transactions for each month, showing a breakdown of
-              payments made across the selected period.
-            </h2>
+          <div className="flex items-center justify-end mb-6">
             <div className="">
               <select
                 name="yearBack"
                 onChange={(e) => setSelectedMonth(e.target.value)}
                 id="yearBack"
-                className="py-2 indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr pl-2 pr-5 cursor-pointer"
+                className="py-2 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr pl-2 pr-5 cursor-pointer"
               >
                 <option selected disabled>
                   Filter by month
@@ -243,19 +239,19 @@ const AllTransactions: React.FC<AllCotransactionsProps> = ({ isRecent }) => {
             transactionToShow.map((t, idx) => (
               <>
                 <div
-                  className="flex flex-col gap-3 bg-white rounded-lg p-4"
+                  className="flex flex-col gap-3 bg-white border border-black/10 rounded-lg p-4"
                   key={idx}
                 >
                   <div className="flex justify-between items-center">
-                    <div className="flex flex-col gap-4">
-                      <h2 className="text-xl font-medium">{t.month}</h2>
-                      <h4 className="font-medium text-base">
+                    <div className="flex flex-col">
+                      <h2 className="text-xl font-semibold">{t.month}</h2>
+                      <h4 className="font-medium text-sm text-gray-600">
                         Total amount paid: N{t.total_amount.toLocaleString()}
                       </h4>
                     </div>
                     <div className="flex items-stretch flex-col lg:flex-row gap-4">
                       <button
-                        className="bg-pryClr text-white rounded-lg px-7 py-3 cursor-pointer font-semibold"
+                        className="bg-pryClr text-white rounded-lg h-[45px] px-4 text-sm cursor-pointer font-semibold"
                         onClick={() =>
                           setAvailableTransaction({
                             status: !availableTransaction.status,
@@ -266,7 +262,7 @@ const AllTransactions: React.FC<AllCotransactionsProps> = ({ isRecent }) => {
                         View transaction
                       </button>
                       <button
-                        className="bg-tetClr text-white rounded-lg px-7 py-3 cursor-pointer font-semibold"
+                        className="bg-tetClr text-white rounded-lg h-[45px] px-4 text-sm cursor-pointer font-semibold"
                         onClick={() => {
                           if (!t.payments?.length) {
                             toast.error(
@@ -300,7 +296,7 @@ const AllTransactions: React.FC<AllCotransactionsProps> = ({ isRecent }) => {
                     <>
                       <table className="w-full text-center">
                         <thead>
-                          <tr className="bg-white/61 h-[65px]">
+                          <tr className="bg-white/61 h-[77px]">
                             <th className="text-xs whitespace-nowrap">S/N</th>
                             <th className="text-xs whitespace-nowrap">
                               Employee Name
@@ -322,9 +318,7 @@ const AllTransactions: React.FC<AllCotransactionsProps> = ({ isRecent }) => {
                           {availableTransaction.transactions.map((t, idx) => (
                             <tr
                               key={idx}
-                              className={`${
-                                idx % 2 === 0 ? "bg-black/5" : "bg-[#F8F8F8]"
-                              } h-[50px] border-y border-black/10`}
+                              className={`${idx % 2 === 0 ? "bg-secClr/90" : "bg-[#FFF]"} h-[50px] border-y border-black/10`}
                             >
                               <td>
                                 {(currentPageFromApi - 1) * apiItemsPerPage +

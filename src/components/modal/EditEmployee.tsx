@@ -11,6 +11,21 @@ import * as Yup from "yup";
 import api from "../../utilities/api";
 import { useUser } from "../../context/UserContext";
 
+type CountryItem = {
+  name: string;
+  isoCode?: string;
+};
+
+interface CountryApiResponse {
+  error: boolean;
+  msg?: string;
+  data: Array<{
+    country: string;
+    iso2?: string;
+    states?: Array<{ name: string }>;
+  }>;
+}
+
 interface EditEmployeeProps {
   isOpen: boolean;
   title?: string;
@@ -93,7 +108,7 @@ const EditEmployee = ({
           .sort((a, b) => a.name.localeCompare(b.name));
 
         const countryMap = new Map<string, string>();
-        countryList.forEach((c) => countryMap.set(c.name, c.isoCode));
+        countryList.forEach((c) => countryMap.set(c.name, c.isoCode ?? ""));
 
         setCountries(countryList.map((c) => c.name));
       } catch (error) {
@@ -200,6 +215,48 @@ const EditEmployee = ({
     },
   });
 
+  // useEffect(() => {
+  //   if (formik.values.country) {
+  //     const fetchStates = async () => {
+  //       setLoadingStates(true);
+  //       try {
+  //         const response = await fetch(
+  //           "https://countriesnow.space/api/v0.1/countries/states",
+  //           {
+  //             method: "POST",
+  //             headers: { "Content-Type": "application/json" },
+  //             body: JSON.stringify({ country: formik.values.country }),
+  //           }
+  //         );
+  //         const result = await response.json();
+  //         if (result.error) throw new Error(result.msg);
+
+  //         const stateList =
+  //           result.data?.states?.map((s: { name: string }) => s.name) || [];
+  //         setStates(stateList);
+
+  //         // Preserve an existing selection if it's valid; otherwise clear.
+  //         const currentState = formik.values.state || employee?.state || "";
+  //         if (currentState && stateList.includes(currentState)) {
+  //           formik.setFieldValue("state", currentState);
+  //         } else {
+  //           formik.setFieldValue("state", "");
+  //         }
+  //       } catch (err) {
+  //         setStates([]);
+  //         // try to keep employee.state if available, otherwise clear
+  //         formik.setFieldValue("state", employee?.state || "");
+  //       } finally {
+  //         setLoadingStates(false);
+  //       }
+  //     };
+  //     fetchStates();
+  //   } else {
+  //     setStates([]);
+  //     formik.setFieldValue("state", employee?.state || "");
+  //   }
+  // }, [formik.values.country]);
+
   useEffect(() => {
     if (formik.values.country) {
       const fetchStates = async () => {
@@ -219,10 +276,18 @@ const EditEmployee = ({
           const stateList =
             result.data?.states?.map((s: { name: string }) => s.name) || [];
           setStates(stateList);
-          formik.setFieldValue("state", "");
+
+          // Preserve an existing selection if it's valid; otherwise clear.
+          const currentState = formik.values.state || employee?.state || "";
+          if (currentState && stateList.includes(currentState)) {
+            formik.setFieldValue("state", currentState);
+          } else {
+            formik.setFieldValue("state", "");
+          }
         } catch (err) {
           setStates([]);
-          formik.setFieldValue("state", "");
+          // try to keep employee.state if available, otherwise clear
+          formik.setFieldValue("state", employee?.state || "");
         } finally {
           setLoadingStates(false);
         }
@@ -230,7 +295,7 @@ const EditEmployee = ({
       fetchStates();
     } else {
       setStates([]);
-      formik.setFieldValue("state", "");
+      formik.setFieldValue("state", employee?.state || "");
     }
   }, [formik.values.country]);
 
@@ -289,7 +354,7 @@ const EditEmployee = ({
           <h3 className="md:text-2xl text-lg font-bold">{title}</h3>
         </div>
         <div className="grid md:grid-cols-2 grid-cols-1 gap-x-6 gap-y-5 h-[50vh] lg:h-[60vh] overflow-y-scroll styled-scrollbar pr-4">
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2 md:col-span-2">
             <label htmlFor="firstName" className="text-xs font-medium">
               Full Name
             </label>
@@ -348,7 +413,7 @@ const EditEmployee = ({
             )}
           </div>
           <div className="flex flex-col gap-2">
-            <label htmlFor="gender" className="text-sm font-medium">
+            <label htmlFor="gender" className="text-xs font-medium">
               Gender
             </label>
             <select
@@ -357,19 +422,19 @@ const EditEmployee = ({
               value={formik.values.gender}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              className="py-2 indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
+              className="md:text-sm text-xs py-2 indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
             >
               <option value="">Select Gender</option>
               <option value="male">Male</option>
               <option value="female">Female</option>
             </select>
             {formik.touched.gender && formik.errors.gender && (
-              <p className="text-sm text-red-600">{formik.errors.gender}</p>
+              <p className="text-sm text-red-600">{String(formik.errors.gender)}</p>
             )}
           </div>
 
           <div className="flex flex-col gap-2">
-            <label htmlFor="dob" className="text-sm font-medium">
+            <label htmlFor="dob" className="text-xs font-medium">
               Date of Birth
             </label>
             <input
@@ -379,15 +444,15 @@ const EditEmployee = ({
               value={formik.values.dob}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              className="py-2 indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
+              className="md:text-sm text-xs py-2 indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
             />
             {formik.touched.dob && formik.errors.dob && (
-              <p className="text-sm text-red-600">{formik.errors.dob}</p>
+              <p className="text-sm text-red-600">{formik.errors.dob as string}</p>
             )}
           </div>
 
           <div className="flex flex-col gap-2">
-            <label htmlFor="dob" className="text-sm font-medium">
+            <label htmlFor="dob" className="text-xs font-medium">
               Country
             </label>
             <select
@@ -396,9 +461,9 @@ const EditEmployee = ({
               value={formik.values.country}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              className="py-2 indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
+              className="md:text-sm text-xs py-2 indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
             >
-              <option selected>
+              <option value="">
                 {loadingCountries
                   ? "Fetching countries..."
                   : "Choose your country"}
@@ -410,12 +475,12 @@ const EditEmployee = ({
               ))}
             </select>
             {formik.touched.country && formik.errors.country && (
-              <p className="text-sm text-red-600">{formik.errors.country}</p>
+              <p className="text-sm text-red-600">{formik.errors.country as string}</p>
             )}
           </div>
 
           <div className="flex flex-col gap-2">
-            <label htmlFor="dob" className="text-sm font-medium">
+            <label htmlFor="dob" className="text-xs font-medium">
               State
             </label>
             <select
@@ -424,9 +489,9 @@ const EditEmployee = ({
               value={formik.values.state}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              className="py-2 indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
+              className="md:text-sm text-xs py-2 indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
             >
-              <option selected>
+              <option value="">
                 {loadingStates
                   ? "Fetching country states..."
                   : "Select your state"}
@@ -438,12 +503,12 @@ const EditEmployee = ({
               ))}
             </select>
             {formik.touched.state && formik.errors.state && (
-              <p className="text-sm text-red-600">{formik.errors.state}</p>
+              <p className="text-sm text-red-600">{formik.errors.state as string}</p>
             )}
           </div>
 
           <div className="md:col-span-2 flex flex-col gap-2">
-            <label htmlFor="address" className="text-sm font-medium">
+            <label htmlFor="address" className="text-xs font-medium">
               Address
             </label>
             <textarea
@@ -452,10 +517,11 @@ const EditEmployee = ({
               value={formik.values.address}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              className="py-4  indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
+              cols={4}
+              className="md:text-sm text-xs py-2 indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
             ></textarea>
             {formik.touched.address && formik.errors.address && (
-              <p className="text-sm text-red-600">{formik.errors.address}</p>
+              <p className="text-sm text-red-600">{formik.errors.address as string}</p>
             )}
           </div>
 
@@ -479,7 +545,7 @@ const EditEmployee = ({
             )}
           </div>
           <div className="flex flex-col gap-2">
-            <label htmlFor="jobTitle" className="text-sm font-medium">
+            <label htmlFor="jobTitle" className="text-xs font-medium">
               Job Title
             </label>
             <input
@@ -489,14 +555,14 @@ const EditEmployee = ({
               value={formik.values.jobTitle}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              className="py-2 indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
+              className="md:text-sm text-xs py-2 indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
             />
             {formik.touched.jobTitle && formik.errors.jobTitle && (
-              <p className="text-sm text-red-600">{formik.errors.jobTitle}</p>
+              <p className="text-sm text-red-600">{formik.errors.jobTitle as string}</p>
             )}
           </div>
           <div className="md:col-span-2 flex flex-col gap-2">
-            <label htmlFor="company_branch" className="text-sm font-medium">
+            <label htmlFor="company_branch" className="text-xs font-medium">
               Company Branch
             </label>
             <select
@@ -505,9 +571,8 @@ const EditEmployee = ({
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
               value={formik.values.company_branch}
-              defaultValue={""}
               disabled={branches.length === 0}
-              className="py-2 indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr disabled:bg-gray-100 disabled:cursor-not-allowed"
+              className="md:text-sm text-xs py-2 indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr disabled:bg-gray-100 disabled:cursor-not-allowed"
             >
               <option disabled value="">
                 Pick Branch
@@ -520,14 +585,14 @@ const EditEmployee = ({
             </select>
             {formik.touched.company_branch && formik.errors.company_branch && (
               <p className="text-sm text-red-600">
-                {formik.errors.company_branch}
+                {formik.errors.company_branch as string}
               </p>
             )}
           </div>
 
           {/* Employment Type */}
           <div className="flex flex-col gap-2">
-            <label htmlFor="employmentType" className="text-sm font-medium">
+            <label htmlFor="employmentType" className="text-xs font-medium">
               Employment Type
             </label>
             <select
@@ -536,7 +601,7 @@ const EditEmployee = ({
               value={formik.values.employmentType}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              className="py-2 indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
+              className="md:text-sm text-xs py-2 indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
             >
               <option value="">Select Employment Type</option>
               <option value="remote">Remote</option>
@@ -545,14 +610,14 @@ const EditEmployee = ({
             </select>
             {formik.touched.employmentType && formik.errors.employmentType && (
               <p className="text-sm text-red-600">
-                {formik.errors.employmentType}
+                {formik.errors.employmentType as string}
               </p>
             )}
           </div>
 
           {/* Employment Date */}
           <div className="flex flex-col gap-2">
-            <label htmlFor="employmentDate" className="text-sm font-medium">
+            <label htmlFor="employmentDate" className="text-xs font-medium">
               Date Employed
             </label>
             <input
@@ -562,11 +627,11 @@ const EditEmployee = ({
               value={formik.values.employmentDate}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              className="py-2 indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
+              className="md:text-sm text-xs py-2 indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
             />
             {formik.touched.employmentDate && formik.errors.employmentDate && (
               <p className="text-sm text-red-600">
-                {formik.errors.employmentDate}
+                {formik.errors.employmentDate as string}
               </p>
             )}
           </div>

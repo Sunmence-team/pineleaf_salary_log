@@ -94,6 +94,7 @@ const AddEmployee = () => {
         const fetchedBanks = await fetchPaystackBanks();
         setBanks(fetchedBanks);
       } catch (error) {
+        console.log("Error fetching banks: ", error)
         toast.error("Failed to load banks.");
       } finally {
         setIsLoadingBanks(false);
@@ -265,7 +266,8 @@ const AddEmployee = () => {
           const stateList = result.data?.states?.map((s:{name:string}) => s.name) || [];
           setStates(stateList);
           formik.setFieldValue("state", "");
-        } catch (err) {
+        } catch (error) {
+          console.error("Error fetching states: ", error)
           setStates([]);
           formik.setFieldValue("state", "");
         } finally {

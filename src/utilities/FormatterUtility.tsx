@@ -22,7 +22,7 @@ export const formatCompactAmount = (amount: number) => {
         { value: 1E12, symbol: "T" }, // 1,000,000,000,000
     ];
 
-    let tier = SI_SUFFIXES.filter(t => absAmount >= t.value).pop();
+    const tier = SI_SUFFIXES.filter(t => absAmount >= t.value).pop();
 
     if (!tier) {
         return formatterUtility(amount);
