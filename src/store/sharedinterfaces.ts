@@ -19,14 +19,22 @@ export interface employeeProps {
   dob: string;
   bank_name: string;
   account_number: string;
+  recipient_code: string | null;
   account_name: string;
   paying: number;
 }
 
 export interface transactionsProps {
-  employer_id: string;
-  payment_date: string;
-  employee_name: string;
+  id: string;
+  created_at: string;
   amount: string;
-  employer: employeeProps;
+  status: string | null;
+  employer_details: employeeProps;
+}
+
+export interface groupTransactionProps {
+  month: string;
+  total_amount: number;
+  count: number;
+  payments: transactionsProps[];
 }

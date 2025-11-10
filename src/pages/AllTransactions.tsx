@@ -1,5 +1,8 @@
 import React, { useCallback, useEffect, useState } from "react";
-import type { transactionsProps } from "../store/sharedinterfaces";
+import type {
+  groupTransactionProps,
+  transactionsProps,
+} from "../store/sharedinterfaces";
 import { toast } from "sonner";
 import api from "../utilities/api";
 import { useUser } from "../context/UserContext";
@@ -8,16 +11,17 @@ import {
   formatISODateToCustom,
   formatterUtility,
 } from "../utilities/FormatterUtility";
+import { CgSpinner } from "react-icons/cg";
 interface AllCotransactionsProps {
   isRecent: boolean;
 }
 
-const AllTransactions: React.FC<AllCotransactionsProps> = ({ isRecent = false }) => {
+const AllTransactions: React.FC<AllCotransactionsProps> = ({ isRecent }) => {
   const { token } = useUser();
-  const [transactions, setTransactions] = useState<transactionsProps[]>([]);
+  const [transactions, setTransactions] = useState<groupTransactionProps[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<any>(null);
-
+  const [selectedMonth, setSelectedMonth] = useState("");
   const [currentPageFromApi, setCurrentPageFromApi] = useState(1);
   const [totalApiPages, setTotalApiPages] = useState(1);
 
@@ -28,7 +32,7 @@ const AllTransactions: React.FC<AllCotransactionsProps> = ({ isRecent = false })
     setError(null);
 
     try {
-      const response = await api.get(
+      const resopnse = await api.get(
         `/payments?page=${currentPageFromApi}&per_page=${apiItemsPerPage}`,
         {
           headers: {
@@ -38,26 +42,23 @@ const AllTransactions: React.FC<AllCotransactionsProps> = ({ isRecent = false })
         }
       );
 
-      console.log(response);
-
-      if (response.status === 200 && response.data.success) {
-        setTransactions(response.data.data);
-        setCurrentPageFromApi(response.data.pagination.current_page);
-        setTotalApiPages(response.data.pagination.last_page);
+      if (resopnse.status === 200 && resopnse.data.success) {
+        setTransactions(resopnse.data.data);
+        setCurrentPageFromApi(resopnse.data.pagination.current_page);
+        setTotalApiPages(resopnse.data.pagination.last_page);
       } else {
         toast.error(
           `Failed to fetch transactions: ${
-            response.data.message || "Unknown error"
+            resopnse.data.message || "Unknown error"
           }`
         );
       }
     } catch (err: any) {
-      console.error("Error fetching transactions:", err);
       if (err.code === "ECONNABORTED") {
         toast.error("Request timed out. Please try again.");
-      } else if (err.response) {
+      } else if (err.resopnse) {
         toast.error(
-          err.response.data?.message || "Something went wrong on the server."
+          err.resopnse.data?.message || "Something went wrong on the server."
         );
       } else if (err.request) {
         toast.error("Server not responding. Please check your connection.");
@@ -83,94 +84,298 @@ const AllTransactions: React.FC<AllCotransactionsProps> = ({ isRecent = false })
   }, []);
 
   const transactionToShow = isRecent ? transactions.slice(0, 5) : transactions;
+  const [availableTransaction, setAvailableTransaction] = useState<{
+    status: boolean;
+    transactions: transactionsProps[];
+  }>({
+    status: false,
+    transactions: [],
+  });
+
+  const convertToCSV = (data: any[]) => {
+    if (!data.length) return "";
+
+    const headers = Object.keys(data[0]).join(",");
+    const rows = data.map((obj) =>
+      Object.values(obj)
+        .map((value) => `"${value}"`)
+        .join(",")
+    );
+    return [headers, ...rows].join("\n");
+  };
+
+  const downloadCSV = (data: any[], fileName = "transactions.csv") => {
+    const csv = convertToCSV(data);
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = fileName;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  function getMonthsBackward(count = 24) {
+    const result = [];
+    const date = new Date();
+
+    for (let i = 0; i < count; i++) {
+      const year = date.getFullYear();
+      const monthNumber = date.getMonth() + 1;
+      const monthName = date.toLocaleString("default", { month: "long" });
+
+      result.push({
+        month: monthName,
+        number: monthNumber,
+        year,
+      });
+
+      date.setMonth(date.getMonth() - 1);
+    }
+
+    return result;
+  }
+
+  useEffect(() => {
+    if (selectedMonth && selectedMonth !== "all") {
+      const fetchTransactions = async () => {
+        setIsLoading(true);
+        setError(null);
+
+        try {
+          const resopnse = await api.get(
+            `/payments?month=${selectedMonth}&page=${currentPageFromApi}&per_page=${apiItemsPerPage}`,
+            {
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+
+          if (resopnse.status === 200 && resopnse.data.success) {
+            setTransactions(resopnse.data.data);
+            setCurrentPageFromApi(resopnse.data.pagination.current_page);
+            setTotalApiPages(resopnse.data.pagination.last_page);
+          } else {
+            toast.error(
+              `Failed to fetch transactions: ${
+                resopnse.data.message || "Unknown error"
+              }`
+            );
+          }
+        } catch (err: any) {
+          if (err.code === "ECONNABORTED") {
+            toast.error("Request timed out. Please try again.");
+          } else if (err.resopnse) {
+            toast.error(
+              err.resopnse.data?.message ||
+                "Something went wrong on the server."
+            );
+          } else if (
+            err.response.data.message === "No salary paid for that month"
+          ) {
+            toast.error("Couldn't find transaction for the selected month");
+          } else if (err.request) {
+            toast.error("Server not responding. Please check your connection.");
+          } else {
+            toast.error("Unexpected error occurred. Please try again.");
+          }
+          setError(err);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      fetchTransactions();
+    } else {
+      fetchTransactions();
+    }
+  }, [selectedMonth]);
 
   return (
-    <div className={`flex flex-col gap-8 ${isRecent ? "p-0" : "px-4 lg:px-6"}`}>
+    <div
+      className={`flex flex-col gap-8  ${isRecent ? "p-0" : "px-4 lg:px-6"}`}
+    >
       <div className="overflow-x-auto rounded-lg no-scrollbar w-full lg:p-0 pe-4">
-        <table className="w-full text-center">
-          <thead>
-            <tr className="bg-white/61 h-[65px]">
-              <th className="text-xs whitespace-nowrap">S/N</th>
-              <th className="text-xs whitespace-nowrap">
-                Employee Name
-              </th>
-
-              <th className="text-xs whitespace-nowrap">
-                Amount
-              </th>
-              <th className="text-xs whitespace-nowrap">
-                Payment Date
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {isLoading ? (
-              <tr className="bg-white/61">
-                <td
-                  colSpan={8}
-                  className="p-4 text-center border-t border-black/10 text-gray-500"
+        {!isRecent ? (
+          <div className="flex items-center justify-between my-7">
+            <h2 className="text-gray-700 text-xl font-medium w-2/3 lg:w-1/2">
+              Below are the transactions for each month, showing a breakdown of
+              payments made across the selected period.
+            </h2>
+            <div className="">
+              <select
+                name="yearBack"
+                onChange={(e) => setSelectedMonth(e.target.value)}
+                id="yearBack"
+                className="py-2 indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr pl-2 pr-5 cursor-pointer"
+              >
+                <option selected disabled>
+                  Filter by month
+                </option>
+                <option value={"all"}>All</option>
+                {getMonthsBackward().map((month, idx) => (
+                  <option
+                    key={idx}
+                    value={`${month.year}-${month.number}`}
+                  >{`${month.month}, ${month.year}`}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        ) : null}
+        <div className="flex flex-col gap-3">
+          {isLoading ? (
+            <div className="flex items-center flex-col justify-center h-[40vh]">
+              <CgSpinner className="text-4xl sm:text-5xl lg:text-6xl animate-spin" />
+              <h2 className="text-base sm:text-xl lg:text-2xl font-medium">
+                Loading transactions...
+              </h2>
+            </div>
+          ) : transactionToShow.length === 0 ? (
+            <div className="flex items-center flex-col justify-center h-[40vh]">
+              <h2 className="text-base sm:text-xl lg:text-2xl font-medium">
+                No recent transactions
+              </h2>
+            </div>
+          ) : (
+            transactionToShow.map((t, idx) => (
+              <>
+                <div
+                  className="flex flex-col gap-3 bg-white rounded-lg p-4"
+                  key={idx}
                 >
-                  Loading transactions...
-                </td>
-              </tr>
-            ) : error ? (
-              <tr className="bg-white/61">
-                <td
-                  colSpan={8}
-                  className="p-4 text-center border-t border-black/10 text-gray-500"
-                >
-                  {error.message}
-                </td>
-              </tr>
-            ) : transactionToShow.length === 0 ? (
-              <tr>
-                <td
-                  colSpan={9}
-                  className="text-center bg-white/61 py-4 border-y border-black/10"
-                >
-                  No transaction found
-                </td>
-              </tr>
-            ) : (
-              transactionToShow.map((transaction, index) => {
-                return (
-                  <tr
-                    key={index}
-                    className={`${
-                      index % 2 === 0 ? "bg-black/5" : "bg-[#F8F8F8]"
-                    } h-[50px] border-y border-black/10`}
-                  >
-                    <td>
-                      {(currentPageFromApi - 1) * apiItemsPerPage + (index + 1)}
-                    </td>
-                    <td className="p-4 text-xs whitespace-nowrap font-medium">
-                      {transaction.employee_name || "-"}
-                    </td>
+                  <div className="flex justify-between items-center">
+                    <div className="flex flex-col gap-4">
+                      <h2 className="text-xl font-medium">{t.month}</h2>
+                      <h4 className="font-medium text-base">
+                        Total amount paid: N{t.total_amount.toLocaleString()}
+                      </h4>
+                    </div>
+                    <div className="flex items-stretch flex-col lg:flex-row gap-4">
+                      <button
+                        className="bg-pryClr text-white rounded-lg px-7 py-3 cursor-pointer font-semibold"
+                        onClick={() =>
+                          setAvailableTransaction({
+                            status: !availableTransaction.status,
+                            transactions: t.payments,
+                          })
+                        }
+                      >
+                        View transaction
+                      </button>
+                      <button
+                        className="bg-tetClr text-white rounded-lg px-7 py-3 cursor-pointer font-semibold"
+                        onClick={() => {
+                          if (!t.payments?.length) {
+                            toast.error(
+                              "No transactions available for this month"
+                            );
+                            return;
+                          }
+                          const loading = toast.loading("Exporting as CSV");
 
-                    <td className="p-4 text-xs whitespace-nowrap">
-                      N{formatterUtility(Number(transaction.amount)) || "-"}
-                    </td>
+                          const formatted = t.payments.map((item: any) => ({
+                            EmployeeName:
+                              item.employer_details?.full_name || "-",
+                            Amount: item.amount,
+                            Reference:
+                              item.employer_details?.recipient_code || "-",
+                            Status: item.status,
+                            PaymentDate:
+                              formatISODateToCustom(item.created_at) || "-",
+                          }));
 
-                    <td className="p-4 text-xs whitespace-nowrap text-pryClr font-bold">
-                      {formatISODateToCustom(transaction.payment_date).split(" ")[0] || "-"}
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-          <tfoot>
-            <tr className={"bg-white/61 h-[65px] border-t border-black/10"}>
-              <td className="text-center p-4" colSpan={8}>
-                <PaginationControls
-                  currentPage={currentPageFromApi}
-                  totalPages={totalApiPages}
-                  setCurrentPage={setCurrentPageFromApi}
-                />
-              </td>
-            </tr>
-          </tfoot>
-        </table>
+                          downloadCSV(formatted, `${t.month}-transactions.csv`);
+                          toast.dismiss(loading);
+                        }}
+                      >
+                        Export as CSV
+                      </button>
+                    </div>
+                  </div>
+                  {availableTransaction.status &&
+                  availableTransaction.transactions === t.payments ? (
+                    <>
+                      <table className="w-full text-center">
+                        <thead>
+                          <tr className="bg-white/61 h-[65px]">
+                            <th className="text-xs whitespace-nowrap">S/N</th>
+                            <th className="text-xs whitespace-nowrap">
+                              Employee Name
+                            </th>
+
+                            <th className="text-xs whitespace-nowrap">
+                              Amount
+                            </th>
+                            <th className="text-xs whitespace-nowrap">REF</th>
+                            <th className="text-xs whitespace-nowrap">
+                              Status
+                            </th>
+                            <th className="text-xs whitespace-nowrap">
+                              Payment Date
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {availableTransaction.transactions.map((t, idx) => (
+                            <tr
+                              key={idx}
+                              className={`${
+                                idx % 2 === 0 ? "bg-black/5" : "bg-[#F8F8F8]"
+                              } h-[50px] border-y border-black/10`}
+                            >
+                              <td>
+                                {(currentPageFromApi - 1) * apiItemsPerPage +
+                                  (idx + 1)}
+                              </td>
+                              <td className="p-4 text-xs whitespace-nowrap font-medium">
+                                {t?.employer_details?.full_name || "-"}
+                              </td>
+                              <td className="p-4 text-xs whitespace-nowrap font-medium">
+                                N
+                                {formatterUtility(
+                                  Number(t.amount.toLocaleString())
+                                ) || "-"}
+                              </td>
+                              <td className="p-4 text-xs whitespace-nowrap font-medium">
+                                {t?.employer_details?.recipient_code || "-"}
+                              </td>
+
+                              <td className="p-4 text-xs whitespace-nowrap capitalize">
+                                {t.status || "-"}
+                              </td>
+
+                              <td className="p-4 text-xs whitespace-nowrap text-pryClr font-bold">
+                                {formatISODateToCustom(t.created_at) || "-"}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                        <tfoot>
+                          <tr
+                            className={
+                              "bg-white/61 h-[65px] border-t border-black/10"
+                            }
+                          >
+                            <td className="text-center p-4" colSpan={8}>
+                              <PaginationControls
+                                currentPage={currentPageFromApi}
+                                totalPages={totalApiPages}
+                                setCurrentPage={setCurrentPageFromApi}
+                              />
+                            </td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    </>
+                  ) : null}
+                </div>
+              </>
+            ))
+          )}
+        </div>
       </div>
     </div>
   );
