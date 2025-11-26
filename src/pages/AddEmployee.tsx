@@ -12,14 +12,16 @@ import api from "../utilities/api";
 const API_URL = import.meta.env.VITE_API_BASE_URL;
 interface CountryApiResponse {
   error: boolean;
+  ok: boolean;
   msg: string;
-  data: {
-    country: string;
+  countries: {
+    name: string;
+    id: number;
     iso2: string;
   }[];
 }
 
-interface CountryItem {
+interface StateItem {
   name: string;
   isoCode: string;
 }
@@ -33,6 +35,7 @@ const AddEmployee = () => {
   const [loadingCountries, setLoadingCountries] = useState(false);
   const [states, setStates] = useState<string[]>([]);
   const [loadingStates, setLoadingStates] = useState(false);
+  const [countryIdMap, setCountryIdMap] = useState<Record<string, number>>({});
   const branches = [
     'HQ - Onitsha',
     'Mgbuka',
@@ -48,43 +51,6 @@ const AddEmployee = () => {
     'Nnewi',
     'Enugu',
   ]
-
-  useEffect(() => {
-    const fetchCountries = async (): Promise<void> => {
-      setLoadingCountries(true);
-      try {
-        const response = await fetch(
-          "https://countriesnow.space/api/v0.1/countries"
-        );
-
-        if (!response.ok) {
-          throw new Error(`Request failed with status ${response.status}`);
-        }
-
-        const resData: CountryApiResponse = await response.json();
-
-        if (resData.error) {
-          throw new Error(resData.msg || "Failed to fetch countries");
-        }
-
-        const countryList: CountryItem[] = resData.data
-          .map((c) => ({ name: c.country, isoCode: c.iso2 }))
-          .sort((a, b) => a.name.localeCompare(b.name));
-
-        const countryMap = new Map<string, string>();
-        countryList.forEach((c) => countryMap.set(c.name, c.isoCode));
-
-        setCountries(countryList.map((c) => c.name));
-      } catch (error) {
-        const message =
-          error instanceof Error ? error.message : "An unknown error occurred";
-        console.error("Error fetching countries:", message);
-      } finally {
-        setLoadingCountries(false);
-      }
-    };
-    fetchCountries();
-  }, []);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -248,23 +214,64 @@ const AddEmployee = () => {
   };
 
   useEffect(() => {
+    const fetchCountries = async (): Promise<void> => {
+      setLoadingCountries(true);
+      try {
+        const response = await fetch(
+          "https://csc.sidsworld.co.in/api/countries"
+        );
+        const resData: CountryApiResponse = await response.json();
+
+        if (!response.ok) {
+          throw new Error(`Request failed with status ${response.status}`);
+        }
+
+        if (!resData.countries || resData.countries.length === 0) {
+          throw new Error('No countries found');
+        }
+
+
+        if (resData.error) {
+          throw new Error(resData.msg || "Failed to fetch countries");
+        }
+
+        const countryList = resData.countries
+          .map(c => ({ name: c.name, id: c.id, iso2: c.iso2 }))
+          .sort((a, b) => a.name.localeCompare(b.name));
+
+        const idMap: Record<string, number> = {};
+
+        resData.countries.forEach(c => {
+          idMap[c.name] = c.id;
+        });
+
+        setCountries(countryList.map(c => c.name));
+        setCountryIdMap(idMap);
+
+        setCountries(countryList.map((c) => c.name));
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "An unknown error occurred";
+        console.error("Error fetching countries:", message);
+      } finally {
+        setLoadingCountries(false);
+      }
+    };
+    fetchCountries();
+  }, []);
+
+  useEffect(() => {
     if (formik.values.country) {
       const fetchStates = async () => {
         setLoadingStates(true);
+        const countryId = countryIdMap[formik.values.country];
         try {
-          const response = await fetch(
-            "https://countriesnow.space/api/v0.1/countries/states",
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ country: formik.values.country }),
-            }
-          );
+          const response = await fetch(`https://csc.sidsworld.co.in/api/states/${countryId}`);
           const result = await response.json();
           if (result.error) throw new Error(result.msg);
 
-          const stateList = result.data?.states?.map((s:{name:string}) => s.name) || [];
-          setStates(stateList);
+          const stateList = result.states?.map((s: StateItem) => s.name) || [];
+          setStates(stateList.sort());
           formik.setFieldValue("state", "");
         } catch (error) {
           console.error("Error fetching states: ", error)

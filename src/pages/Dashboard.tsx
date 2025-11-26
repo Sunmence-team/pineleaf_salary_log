@@ -24,7 +24,7 @@ const Dashboard = () => {
                 <MdPeople />
               </div>
             }
-            value={dashboardMetrics.total_employees}
+            value={dashboardMetrics.total_employees || 0}
           />
         </div>
         <div className="lg:min-w-[calc((100%/3)-16px)]! md:min-w-[33.3%]! min-w-[310px]">
@@ -35,7 +35,7 @@ const Dashboard = () => {
                 <MdAttachMoney />
               </div>
             }
-            value={dashboardMetrics.total_salary_paid}
+            value={dashboardMetrics.total_salary_paid || 0}
           />
         </div>
         <div className="lg:min-w-[calc((100%/3)-16px)]! md:min-w-[33.3%]! min-w-[310px]">
@@ -46,7 +46,7 @@ const Dashboard = () => {
                 <MdCheckCircle />
               </div>
             }
-            value={dashboardMetrics.no_CompletedPayments}
+            value={dashboardMetrics.no_CompletedPayments || 0}
           />
         </div>
         <div className="lg:min-w-[calc((100%/3)-16px)]! md:min-w-[33.3%]! min-w-[310px]">
@@ -57,7 +57,7 @@ const Dashboard = () => {
                 <MdTrendingUp />
               </div>
             }
-            value={dashboardMetrics.total_estimated_salary}
+            value={dashboardMetrics.total_estimated_salary || 0}
           />
         </div>
       </div>

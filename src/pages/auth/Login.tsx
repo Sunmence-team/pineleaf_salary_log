@@ -75,32 +75,15 @@ const Login = () => {
         }
       } catch (err: any) {
         console.error("Error during logging in:", err);
-        if (
-          axios.isAxiosError(err) &&
-          err.response &&
-          err.response.status === 401
-        ) {
+        if (axios.isAxiosError(err) && err.response && err.response.status === 401) {
           toast.error(
             err.response.data.message ||
               "Validation error. Please check your inputs."
           );
-        } else if (
-          axios.isAxiosError(err) &&
-          err.response &&
-          err.response.status === 403
-        ) {
-          toast.error(
-            err.response.data.message || "Error: One time payment not made yet"
-          );
-          setTimeout(() => {
-            toast.error("Redirecting to payment page...");
-            setTimeout(() => {
-              window.location.href = err.response?.data.authorization_url;
-            }, 1000);
-          }, 2500);
         } else {
           toast.error(
-            "An unexpected error occurred while logging in. " + err.message
+            err.response.data.message ||
+              "Error during logging in"
           );
           console.error("Error during logging in:", err);
         }
