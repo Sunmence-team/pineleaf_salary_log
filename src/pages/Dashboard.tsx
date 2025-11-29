@@ -48,7 +48,7 @@ const Dashboard = () => {
   };
 
   useEffect(() => {
-    refreshUser(token)
+    refreshUser(token ? token : "")
     fetchEmployees()
   }, [token])
 

@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { toast } from "sonner";
 import api, { setupInterceptors } from "../utilities/api";
-const API_URL = import.meta.env.VITE_API_BASE_URL;
 
 interface userProviderProps {
   children: React.ReactNode;
