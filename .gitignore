@@ -28,3 +28,6 @@ dist-ssr
 
 .env
 dotenv
+
+
+# [![Deploy Pineleaf Salary Log via FTP](https://github.com/Sunmence-team/pineleaf_salary_log/actions/workflows/deploy.yml/badge.svg)](https://github.com/Sunmence-team/pineleaf_salary_log/actions/workflows/deploy.yml)
