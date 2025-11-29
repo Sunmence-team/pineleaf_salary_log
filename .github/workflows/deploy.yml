@@ -22,7 +22,11 @@ jobs:
         run: npm install
 
       - name: Build Project
-        run: npm run build
+        run: | 
+          echo "VITE_API_URL=${{ secrets.VITE_API_URL }}" >> .env
+          echo "VITE_SECRET_KEY=${{ secrets.VITE_SECRET_KEY }}" >> .env
+          npm run build
+
 
       - name: Deploy to Hostinger FTP
         uses: SamKirkland/FTP-Deploy-Action@4.3.3
