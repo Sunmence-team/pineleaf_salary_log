@@ -13,11 +13,18 @@ import { useUser } from "../context/UserContext";
 import { useEffect, useState } from "react";
 import api from "../utilities/api";
 import { toast } from "sonner";
+import { formatterUtility } from "../utilities/FormatterUtility";
+
+export interface employeeProps {
+  salary_amount: string;
+}
+
 
 const Dashboard = () => {
   const { dashboardMetrics, refreshUser, token } = useUser();
   const [ isLoading, setIsLoading ] = useState<boolean>(true);
   const [ totalApiPages, setTotalApiPages ] = useState<number>(0);
+  const [employees, setEmployees] = useState<employeeProps[]>([]);
 
   const fetchEmployees = async () => {
     if (!token) return;
@@ -25,7 +32,7 @@ const Dashboard = () => {
     setIsLoading(true);
   
     try {
-      const response = await api.get(`/all_employers`, {
+      const response = await api.get(`/all_employers?per_page=1000`, {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
@@ -35,6 +42,7 @@ const Dashboard = () => {
       console.log("employees response", response);
 
       if (response.status === 200 && response.data.status === "success") {
+        setEmployees(response.data.data.data);
         setTotalApiPages(response.data.data.total);
       } else {
         toast.error(`Failed to fetch stats`)
@@ -51,6 +59,10 @@ const Dashboard = () => {
     refreshUser(token ? token : "")
     fetchEmployees()
   }, [token])
+
+  const estimatedSalries = employees.reduce((total, eachEmp) => {
+    return total + Number(eachEmp.salary_amount)
+  }, 0)
 
 
   return (
@@ -98,7 +110,7 @@ const Dashboard = () => {
                 <MdTrendingUp />
               </div>
             }
-            value={isLoading ? "..." : dashboardMetrics.total_estimated_salary || 0}
+            value={isLoading ? "..." : formatterUtility(Number(estimatedSalries)) || 0}
           />
         </div>
       </div>
