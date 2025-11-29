@@ -33,6 +33,7 @@ const AllEmployees = () => {
 
   const [currentPageFromApi, setCurrentPageFromApi] = useState(1);
   const [totalApiPages, setTotalApiPages] = useState(1);
+  const [availableEntries, setAvailableEntries] = useState(1);
 
   const apiItemsPerPage = 5;
 
@@ -72,7 +73,7 @@ const AllEmployees = () => {
 
     try {
       const response = await api.get(
-        `/all_employers?search=${searchQuery}&page=${currentPageFromApi}&per_page=${apiItemsPerPage}`,
+        `/all_employers?&page=${currentPageFromApi}&per_page=${searchQuery ? availableEntries : apiItemsPerPage}`,
         {
           headers: {
             "Content-Type": "application/json",
@@ -87,6 +88,7 @@ const AllEmployees = () => {
         setEmployees(response.data.data.data);
         setCurrentPageFromApi(response.data.data.current_page);
         setTotalApiPages(response.data.data.last_page);
+        setAvailableEntries(response.data.data.total);
       } else {
         toast.error(
           `Failed to fetch employees: ${
@@ -119,25 +121,75 @@ const AllEmployees = () => {
     }
   }, [token, searchQuery, currentPageFromApi, apiItemsPerPage]);
 
+  const fetchAllEmployees = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // Fetch page 1 first
+      const firstPage = await api.get(`/all_employers?page=1&per_page=${apiItemsPerPage}`, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const { data, last_page } = firstPage.data.data;
+
+      let allEmployees = [...data];
+
+      // Fetch all remaining pages
+      for (let page = 2; page <= last_page; page++) {
+        const res = await api.get(`/all_employers?page=${page}&per_page=${apiItemsPerPage}`, {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        allEmployees = [...allEmployees, ...res.data.data.data];
+      }
+
+      // Update state with all employees
+      setEmployees(allEmployees);
+      setTotalApiPages(last_page);
+      setAvailableEntries(allEmployees.length);
+
+    } catch (err) {
+      console.error("Error fetching ALL employees:", err);
+      setError(err);
+      toast.error("Failed to load all employees.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [token]);
+
+  // useEffect(() => {
+  //   const delayDebounce = setTimeout(() => {
+  //     fetchEmployees();
+  //   }, 500);
+
+  //   return () => clearTimeout(delayDebounce);
+  // }, [fetchEmployees]);
   useEffect(() => {
     const delayDebounce = setTimeout(() => {
-      fetchEmployees();
+      if (searchQuery.trim() !== "") {
+        // User is searching → fetch ALL first
+        fetchAllEmployees();
+      } else {
+        // No search → normal paginated fetch
+        fetchEmployees();
+      }
     }, 500);
 
     return () => clearTimeout(delayDebounce);
-  }, [fetchEmployees]);
+  }, [searchQuery, fetchEmployees, fetchAllEmployees]);
+
 
   useEffect(() => {
     setCurrentPageFromApi(1);
   }, [searchQuery, selectedStatus]);
 
-  // const filteredList = employees.filter((data) => {
-  //   const statusMatches =
-  //     selectedStatus === "all" ||
-  //     data.employmentType?.toLowerCase() === selectedStatus.toLowerCase();
-
-  //   return statusMatches;
-  // });
   const filteredList = employees.filter((data) => {
     const statusMatches =
       selectedStatus === "all" ||
@@ -384,17 +436,21 @@ const AllEmployees = () => {
               })
             )}
           </tbody>
-          <tfoot>
-            <tr className={"bg-white/61 h-[77px] border-t border-black/10"}>
-              <td className="text-center p-4" colSpan={8}>
-                <PaginationControls
-                  currentPage={currentPageFromApi}
-                  totalPages={totalApiPages}
-                  setCurrentPage={setCurrentPageFromApi}
-                />
-              </td>
-            </tr>
-          </tfoot>
+          {
+            !isLoading && filteredList.length > apiItemsPerPage && (
+              <tfoot>
+                <tr className={"bg-white/61 h-[77px] border-t border-black/10"}>
+                  <td className="text-center p-4" colSpan={8}>
+                    <PaginationControls
+                      currentPage={currentPageFromApi}
+                      totalPages={totalApiPages}
+                      setCurrentPage={setCurrentPageFromApi}
+                    />
+                  </td>
+                </tr>
+              </tfoot>
+            )
+          }
         </table>
       </div>
 
