@@ -34,15 +34,7 @@ const ManagePayments: React.FC = () => {
     useState<employeeProps | null>(null);
 
   const fetchEmployees = useCallback(async () => {
-    // if (!token) {
-    //   const load = toast.loading("Session timed out. Logging out...");
-    //   setIsLoading(false);
-    //   setTimeout(() => {
-    //     logout();
-    //     toast.dismiss(load);
-    //   }, 500);
-    //   return;
-    // }
+    if (!token) return;
 
     setIsLoading(true);
     setError(null);
@@ -192,7 +184,7 @@ const ManagePayments: React.FC = () => {
             className="flex items-center gap-2 px-4 py-2 cursor-pointer rounded-lg bg-pryClr text-white hover:opacity-95 disabled:opacity-50 transition"
             title="Initialize payment for all employees"
           >
-            <span>Pay Staffs</span>
+            <span>Pay Staff</span>
           </button>
         </div>
       </div>

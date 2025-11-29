@@ -32,7 +32,7 @@ const AllTransactions: React.FC<AllCotransactionsProps> = ({ isRecent }) => {
     // setError(null);
 
     try {
-      const resopnse = await api.get(
+      const response = await api.get(
         `/payments?page=${currentPageFromApi}&per_page=${apiItemsPerPage}`,
         {
           headers: {
@@ -42,30 +42,40 @@ const AllTransactions: React.FC<AllCotransactionsProps> = ({ isRecent }) => {
         }
       );
 
-      if (resopnse.status === 200 && resopnse.data.success) {
-        setTransactions(resopnse.data.data);
-        setCurrentPageFromApi(resopnse.data.pagination.current_page);
-        setTotalApiPages(resopnse.data.pagination.last_page);
+      console.log("response",response)
+
+      if (response.status === 200 && response.data.success) {
+        setTransactions(response.data.data);
+        setCurrentPageFromApi(response.data.pagination.current_page);
+        setTotalApiPages(response.data.pagination.last_page);
       } else {
         toast.error(
           `Failed to fetch transactions: ${
-            resopnse.data.message || "Unknown error"
+            response.data.message || "Unknown error"
           }`
         );
       }
     } catch (err: any) {
-      if (err.code === "ECONNABORTED") {
-        toast.error("Request timed out. Please try again.");
-      } else if (err.resopnse) {
-        toast.error(
-          err.resopnse.data?.message || "Something went wrong on the server."
-        );
-      } else if (err.request) {
-        toast.error("Server not responding. Please check your connection.");
+      toast.error(
+        err.response.data?.message || "Something went wrong on the server."
+      );
+      if (
+        err.response.data.message === "No salary paid for that month" && selectedMonth
+      ) {
+        toast.error("Couldn't find transaction for the selected month");
       } else {
-        toast.error("Unexpected error occurred. Please try again.");
+        toast.error("No transactions found");
       }
+      // if (err.code === "ECONNABORTED") {
+      //   toast.error("Request timed out. Please try again.");
+      // } else if (err.response) {
+      // } else if (err.request) {
+      //   toast.error("Server not responding. Please check your connection.");
+      // } else {
+      //   toast.error("Unexpected error occurred. Please try again.");
+      // }
       // setError(err);
+      console.error("Unexpected error occurred. Please try again.", err);
     } finally {
       setIsLoading(false);
     }
@@ -144,7 +154,7 @@ const AllTransactions: React.FC<AllCotransactionsProps> = ({ isRecent }) => {
         // setError(null);
 
         try {
-          const resopnse = await api.get(
+          const response = await api.get(
             `/payments?month=${selectedMonth}&page=${currentPageFromApi}&per_page=${apiItemsPerPage}`,
             {
               headers: {
@@ -154,27 +164,27 @@ const AllTransactions: React.FC<AllCotransactionsProps> = ({ isRecent }) => {
             }
           );
 
-          if (resopnse.status === 200 && resopnse.data.success) {
-            setTransactions(resopnse.data.data);
-            setCurrentPageFromApi(resopnse.data.pagination.current_page);
-            setTotalApiPages(resopnse.data.pagination.last_page);
+          if (response.status === 200 && response.data.success) {
+            setTransactions(response.data.data);
+            setCurrentPageFromApi(response.data.pagination.current_page);
+            setTotalApiPages(response.data.pagination.last_page);
           } else {
             toast.error(
               `Failed to fetch transactions: ${
-                resopnse.data.message || "Unknown error"
+                response.data.message || "Unknown error"
               }`
             );
           }
         } catch (err: any) {
           if (err.code === "ECONNABORTED") {
             toast.error("Request timed out. Please try again.");
-          } else if (err.resopnse) {
+          } else if (err.response) {
             toast.error(
-              err.resopnse.data?.message ||
+              err.response.data?.message ||
                 "Something went wrong on the server."
             );
           } else if (
-            err.response.data.message === "No salary paid for that month"
+            err.response.data.message === "No salary paid for that month" && selectedMonth
           ) {
             toast.error("Couldn't find transaction for the selected month");
           } else if (err.request) {

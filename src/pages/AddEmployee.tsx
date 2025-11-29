@@ -312,7 +312,7 @@ const AddEmployee = () => {
               value={formik.values.firstName}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              className="py-2 indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
+              className="h-[45px] text-sm indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
             />
             {formik.touched.firstName && formik.errors.firstName && (
               <p className="text-sm text-red-600">{formik.errors.firstName}</p>
@@ -331,7 +331,7 @@ const AddEmployee = () => {
               value={formik.values.lastName}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              className="py-2 indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
+              className="h-[45px] text-sm indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
             />
             {formik.touched.lastName && formik.errors.lastName && (
               <p className="text-sm text-red-600">{formik.errors.lastName}</p>
@@ -350,7 +350,7 @@ const AddEmployee = () => {
               value={formik.values.email}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              className="py-2 indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
+              className="h-[45px] text-sm indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
             />
             {formik.touched.email && formik.errors.email && (
               <p className="text-sm text-red-600">{formik.errors.email}</p>
@@ -369,7 +369,7 @@ const AddEmployee = () => {
               value={formik.values.phoneNumber}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              className="py-2 indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
+              className="h-[45px] text-sm indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
             />
             {formik.touched.phoneNumber && formik.errors.phoneNumber && (
               <p className="text-sm text-red-600">
@@ -389,7 +389,7 @@ const AddEmployee = () => {
               value={formik.values.gender}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              className="py-2 indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
+              className="h-[45px] text-sm indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
             >
               <option value="">Select Gender</option>
               <option value="male">Male</option>
@@ -412,7 +412,7 @@ const AddEmployee = () => {
               value={formik.values.dob}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              className="py-2 indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
+              className="h-[45px] text-sm indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
             />
             {formik.touched.dob && formik.errors.dob && (
               <p className="text-sm text-red-600">{formik.errors.dob}</p>
@@ -429,7 +429,7 @@ const AddEmployee = () => {
               value={formik.values.country}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              className="py-2 indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
+              className="h-[45px] text-sm indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
             >
               <option selected>
                 {loadingCountries
@@ -457,7 +457,7 @@ const AddEmployee = () => {
               value={formik.values.state}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              className="py-2 indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
+              className="h-[45px] text-sm indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
             >
               <option selected>
                 {loadingStates
@@ -508,7 +508,7 @@ const AddEmployee = () => {
               value={formik.values.jobTitle}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              className="py-2 indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
+              className="h-[45px] text-sm indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
             />
             {formik.touched.jobTitle && formik.errors.jobTitle && (
               <p className="text-sm text-red-600">{formik.errors.jobTitle}</p>
@@ -527,7 +527,7 @@ const AddEmployee = () => {
               value={formik.values.department}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              className="py-2 indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
+              className="h-[45px] text-sm indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
             />
             {formik.touched.department && formik.errors.department && (
               <p className="text-sm text-red-600">{formik.errors.department}</p>
@@ -547,7 +547,7 @@ const AddEmployee = () => {
               value={formik.values.company_branch}
               defaultValue={""}
               disabled={branches.length === 0}
-              className="py-2 indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr disabled:bg-gray-100 disabled:cursor-not-allowed"
+              className="h-[45px] text-sm indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr disabled:bg-gray-100 disabled:cursor-not-allowed"
             >
                <option disabled value="">
                 Pick Branch
@@ -574,7 +574,7 @@ const AddEmployee = () => {
               value={formik.values.employmentType}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              className="py-2 indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
+              className="h-[45px] text-sm indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
             >
               <option value="">Select Employment Type</option>
               <option value="remote">Remote</option>
@@ -600,7 +600,7 @@ const AddEmployee = () => {
               value={formik.values.employmentDate}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              className="py-2 indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
+              className="h-[45px] text-sm indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
             />
             {formik.touched.employmentDate && formik.errors.employmentDate && (
               <p className="text-sm text-red-600">
@@ -626,7 +626,7 @@ const AddEmployee = () => {
               onBlur={formik.handleBlur}
               value={formik.values.bank_name}
               disabled={isLoadingBanks}
-              className="py-2 indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr disabled:bg-gray-100 disabled:cursor-not-allowed"
+              className="h-[45px] text-sm indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr disabled:bg-gray-100 disabled:cursor-not-allowed"
             >
               <option value="">
                 {isLoadingBanks ? "Loading Banks..." : "Select Bank"}
@@ -656,7 +656,7 @@ const AddEmployee = () => {
               onBlur={formik.handleBlur}
               maxLength={10}
               placeholder="Enter 10-digit account number"
-              className="py-2 indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
+              className="h-[45px] text-sm indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
             />
             {formik.touched.account_number && formik.errors.account_number && (
               <p className="text-sm text-red-600">
@@ -684,7 +684,7 @@ const AddEmployee = () => {
                   ? "Resolving account name..."
                   : "Auto-filled after account number"
               }
-              className="py-2 indent-3 border border-gray-300 rounded-md focus:outline-none bg-gray-50 cursor-not-allowed"
+              className="h-[45px] text-sm indent-3 border border-gray-300 rounded-md focus:outline-none bg-gray-50 cursor-not-allowed"
             />
             {formik.touched.account_name && formik.errors.account_name && (
               <p className="text-sm text-red-600">
@@ -706,7 +706,7 @@ const AddEmployee = () => {
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
               placeholder="Enter amount"
-              className="py-2 indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
+              className="h-[45px] text-sm indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
             />
             {formik.touched.salary_amount && formik.errors.salary_amount && (
               <p className="text-sm text-red-600">
