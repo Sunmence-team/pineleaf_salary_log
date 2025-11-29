@@ -82,21 +82,21 @@ export const UserProvider = ({ children }: userProviderProps) => {
   const isLoggedIn = !!token;
 
   const logout = () => {
-    localStorage.removeItem("token");
-    setToken(null);
-    localStorage.removeItem("user");
-    setUser(null);
-    localStorage.removeItem("dashboardMetrics"); // Clear metrics on logout
-    setDashboardMetrics({
-      total_employees: 0,
-      total_salary_paid: 0,
-      no_CompletedPayments: 0,
-      total_estimated_salary: 0,
-    });
-    toast.success("Logged out successfully");
-    setTimeout(() => {
-      window.location.href = "https://salary.pineleafestates.com";
-    }, 1000);
+    // localStorage.removeItem("token");
+    // setToken(null);
+    // localStorage.removeItem("user");
+    // setUser(null);
+    // localStorage.removeItem("dashboardMetrics"); // Clear metrics on logout
+    // setDashboardMetrics({
+    //   total_employees: 0,
+    //   total_salary_paid: 0,
+    //   no_CompletedPayments: 0,
+    //   total_estimated_salary: 0,
+    // });
+    // toast.success("Logged out successfully");
+    // setTimeout(() => {
+    //   window.location.href = "https://salary.pineleafestates.com";
+    // }, 1000);
   };
 
   useEffect(() => {

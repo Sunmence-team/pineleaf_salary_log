@@ -72,7 +72,7 @@ const AllEmployees = () => {
 
     try {
       const response = await api.get(
-        `/all_employers?&page=${currentPageFromApi}&per_page=${apiItemsPerPage}`,
+        `/all_employers?search=${searchQuery}&page=${currentPageFromApi}&per_page=${apiItemsPerPage}`,
         {
           headers: {
             "Content-Type": "application/json",
@@ -117,7 +117,7 @@ const AllEmployees = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [token, currentPageFromApi, apiItemsPerPage]);
+  }, [token, searchQuery, currentPageFromApi, apiItemsPerPage]);
 
   useEffect(() => {
     const delayDebounce = setTimeout(() => {

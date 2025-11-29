@@ -1,4 +1,4 @@
-name: Deploy React App via FTP
+name: Deploy Pineleaf Salary Log via FTP
 
 on:
   push:
@@ -31,4 +31,4 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: dist/
-          server-dir: test/
+          server-dir: salary/
