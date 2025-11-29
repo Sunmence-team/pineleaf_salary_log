@@ -106,11 +106,11 @@ export const UserProvider = ({ children }: userProviderProps) => {
 
   const refreshUser = async (token: string) => {
     try {
-      const response = await api.get(`${API_URL}/api/user`, {
+      const response = await api.get(`/user`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      // console.log("refresh response", response)
+      console.log("refresh response", response)
 
       const updatedUser = response.data;
 

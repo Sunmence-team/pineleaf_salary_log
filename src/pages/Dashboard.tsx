@@ -10,54 +10,95 @@ import { Link } from "react-router-dom";
 import { GoArrowUpRight } from "react-icons/go";
 import AllTransactions from "./AllTransactions";
 import { useUser } from "../context/UserContext";
+import { useEffect, useState } from "react";
+import api from "../utilities/api";
+import { toast } from "sonner";
 
 const Dashboard = () => {
-  const { dashboardMetrics } = useUser();
+  const { dashboardMetrics, refreshUser, token } = useUser();
+  const [ isLoading, setIsLoading ] = useState<boolean>(true);
+  const [ totalApiPages, setTotalApiPages ] = useState<number>(0);
+
+  const fetchEmployees = async () => {
+    if (!token) return;
+  
+    setIsLoading(true);
+  
+    try {
+      const response = await api.get(`/all_employers`, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      console.log("employees response", response);
+
+      if (response.status === 200 && response.data.status === "success") {
+        setTotalApiPages(response.data.data.total);
+      } else {
+        toast.error(`Failed to fetch stats`)
+      }
+    } catch (err: any) {
+      console.error("Error fetching employees:", err);
+      toast.error(`Failed to fetch stats`)
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    refreshUser(token)
+    fetchEmployees()
+  }, [token])
+
+
   return (
     <div className="flex flex-col gap-8 px-4 md:px-6">
       <div className="flex gap-4 justify-between overflow-x-scroll no-scrollbar">
-        <div className="lg:min-w-[calc((100%/3)-16px)]! md:min-w-[33.3%]! min-w-[310px]">
+        <div className="lg:min-w-[calc((100%/4)-16px)]! md:min-w-[33.3%]! min-w-[310px]">
           <OverviewCards
             title="Total Employees"
             icon={
-              <div className="bg-pryClr/20 text-pryClr w-8 h-8 flex items-center justify-center rounded-full">
+              <div className="bg-pryClr/20 text-pryClr w-6 h-6 flex items-center justify-center rounded-full">
                 <MdPeople />
               </div>
             }
-            value={dashboardMetrics.total_employees || 0}
+            // value={isLoading ? "..." : dashboardMetrics.total_employees || 0}
+            value={isLoading ? "..." : totalApiPages || 0}
           />
         </div>
-        <div className="lg:min-w-[calc((100%/3)-16px)]! md:min-w-[33.3%]! min-w-[310px]">
+        <div className="lg:min-w-[calc((100%/4)-16px)]! md:min-w-[33.3%]! min-w-[310px]">
           <OverviewCards
             title="Total Salary Paid"
             icon={
-              <div className="bg-pryClr/20 text-pryClr w-8 h-8 flex items-center justify-center rounded-full">
+              <div className="bg-pryClr/20 text-pryClr w-6 h-6 flex items-center justify-center rounded-full">
                 <MdAttachMoney />
               </div>
             }
-            value={dashboardMetrics.total_salary_paid || 0}
+            value={isLoading ? "..." : dashboardMetrics.total_salary_paid || 0}
           />
         </div>
-        <div className="lg:min-w-[calc((100%/3)-16px)]! md:min-w-[33.3%]! min-w-[310px]">
+        <div className="lg:min-w-[calc((100%/4)-16px)]! md:min-w-[33.3%]! min-w-[310px]">
           <OverviewCards
             title="No of completed payments"
             icon={
-              <div className="bg-pryClr/20 text-pryClr w-8 h-8 flex items-center justify-center rounded-full">
+              <div className="bg-pryClr/20 text-pryClr w-6 h-6 flex items-center justify-center rounded-full">
                 <MdCheckCircle />
               </div>
             }
-            value={dashboardMetrics.no_CompletedPayments || 0}
+            value={isLoading ? "..." : dashboardMetrics.no_CompletedPayments || 0}
           />
         </div>
-        <div className="lg:min-w-[calc((100%/3)-16px)]! md:min-w-[33.3%]! min-w-[310px]">
+        <div className="lg:min-w-[calc((100%/4)-16px)]! md:min-w-[33.3%]! min-w-[310px]">
           <OverviewCards
             title="Total Estimated Salary"
             icon={
-              <div className="bg-pryClr/20 text-pryClr w-8 h-8 flex items-center justify-center rounded-full">
+              <div className="bg-pryClr/20 text-pryClr w-6 h-6 flex items-center justify-center rounded-full">
                 <MdTrendingUp />
               </div>
             }
-            value={dashboardMetrics.total_estimated_salary || 0}
+            value={isLoading ? "..." : dashboardMetrics.total_estimated_salary || 0}
           />
         </div>
       </div>
