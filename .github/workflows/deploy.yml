@@ -3,7 +3,7 @@ name: Deploy Pineleaf Salary Log via FTP
 on:
   push:
     branches:
-      - main
+      - master
 
 jobs:
   deploy:
