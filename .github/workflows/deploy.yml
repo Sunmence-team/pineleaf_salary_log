@@ -23,8 +23,8 @@ jobs:
 
       - name: Build Project
         run: | 
-          echo "VITE_API_URL=${{ secrets.VITE_API_URL }}" >> .env
-          echo "VITE_SECRET_KEY=${{ secrets.VITE_SECRET_KEY }}" >> .env
+          echo "VITE_API_BASE_URL=${{ secrets.VITE_API_BASE_URL }}" >> .env
+          echo "VITE_PAYSTACK_SECRET_KEY=${{ secrets.VITE_PAYSTACK_SECRET_KEY }}" >> .env
           npm run build
 
 
