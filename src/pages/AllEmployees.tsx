@@ -437,7 +437,7 @@ const AllEmployees = () => {
             )}
           </tbody>
           {
-            !isLoading && filteredList.length > apiItemsPerPage && (
+            !isLoading && totalApiPages > 1 && (
               <tfoot>
                 <tr className={"bg-white/61 h-[77px] border-t border-black/10"}>
                   <td className="text-center p-4" colSpan={8}>
