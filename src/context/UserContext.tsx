@@ -27,6 +27,7 @@ interface UserContextType {
   logout: () => void;
   isLoggedIn: boolean;
   refreshUser: (token: string) => Promise<void>;
+  isLoading: boolean;
   dashboardMetrics: dashboardMetricsProps;
 }
 
@@ -36,6 +37,7 @@ export const UserProvider = ({ children }: userProviderProps) => {
   const [user, setUser] = useState<userProps | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [role, setRole] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const [dashboardMetrics, setDashboardMetrics] =
     useState<dashboardMetricsProps>({
@@ -82,21 +84,21 @@ export const UserProvider = ({ children }: userProviderProps) => {
   const isLoggedIn = !!token;
 
   const logout = () => {
-    localStorage.removeItem("token");
-    setToken(null);
-    localStorage.removeItem("user");
-    setUser(null);
-    localStorage.removeItem("dashboardMetrics"); // Clear metrics on logout
-    setDashboardMetrics({
-      total_employees: 0,
-      total_salary_paid: 0,
-      no_CompletedPayments: 0,
-      total_estimated_salary: 0,
-    });
-    toast.success("Logged out successfully");
-    setTimeout(() => {
-      window.location.href = "https://salary.pineleafestates.com";
-    }, 1000);
+    // localStorage.removeItem("token");
+    // setToken(null);
+    // localStorage.removeItem("user");
+    // setUser(null);
+    // localStorage.removeItem("dashboardMetrics"); // Clear metrics on logout
+    // setDashboardMetrics({
+    //   total_employees: 0,
+    //   total_salary_paid: 0,
+    //   no_CompletedPayments: 0,
+    //   total_estimated_salary: 0,
+    // });
+    // toast.success("Logged out successfully");
+    // setTimeout(() => {
+    //   window.location.href = "https://salary.pineleafestates.com";
+    // }, 1000);
   };
 
   useEffect(() => {
@@ -105,19 +107,23 @@ export const UserProvider = ({ children }: userProviderProps) => {
 
   const refreshUser = async (token: string) => {
     try {
-      const response = await api.get(`/user`, {
+      const response = await api.get(`/me`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
       console.log("refresh response", response)
 
-      const updatedUser = response.data;
-
-      setUser(updatedUser);
-      localStorage.setItem("user", JSON.stringify(updatedUser));
-      setRole(updatedUser?.role || null);
+      const updatedMe = response.data;
+      setDashboardMetrics({
+        total_employees: updatedMe?.total_employees,
+        total_salary_paid: updatedMe?.total_salary_paid,
+        no_CompletedPayments: updatedMe?.no_completed_payments,
+        total_estimated_salary: updatedMe?.total_estimated_salary,
+      });
     } catch (err) {
       console.error("Failed to refresh user:", err);
+    } finally {
+      setIsLoading(false)
     }
   };
 
@@ -133,6 +139,7 @@ export const UserProvider = ({ children }: userProviderProps) => {
         logout,
         isLoggedIn,
         refreshUser,
+        isLoading,
         dashboardMetrics,
       }}
     >

@@ -10,9 +10,7 @@ import { Link } from "react-router-dom";
 import { GoArrowUpRight } from "react-icons/go";
 import AllTransactions from "./AllTransactions";
 import { useUser } from "../context/UserContext";
-import { useEffect, useState } from "react";
-import api from "../utilities/api";
-import { toast } from "sonner";
+import { useEffect } from "react";
 import { formatterUtility } from "../utilities/FormatterUtility";
 
 export interface employeeProps {
@@ -21,49 +19,11 @@ export interface employeeProps {
 
 
 const Dashboard = () => {
-  const { dashboardMetrics, refreshUser, token } = useUser();
-  const [ isLoading, setIsLoading ] = useState<boolean>(true);
-  const [ totalApiPages, setTotalApiPages ] = useState<number>(0);
-  const [employees, setEmployees] = useState<employeeProps[]>([]);
-
-  const fetchEmployees = async () => {
-    if (!token) return;
-  
-    setIsLoading(true);
-  
-    try {
-      const response = await api.get(`/all_employers?per_page=1000`, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      console.log("employees response", response);
-
-      if (response.status === 200 && response.data.status === "success") {
-        setEmployees(response.data.data.data);
-        setTotalApiPages(response.data.data.total);
-      } else {
-        toast.error(`Failed to fetch stats`)
-      }
-    } catch (err: any) {
-      console.error("Error fetching employees:", err);
-      toast.error(`Failed to fetch stats`)
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const { dashboardMetrics, isLoading, refreshUser, token } = useUser();
 
   useEffect(() => {
     refreshUser(token ? token : "")
-    fetchEmployees()
   }, [token])
-
-  const estimatedSalries = employees.reduce((total, eachEmp) => {
-    return total + Number(eachEmp.salary_amount)
-  }, 0)
-
 
   return (
     <div className="flex flex-col gap-8 px-4 md:px-6">
@@ -76,8 +36,7 @@ const Dashboard = () => {
                 <MdPeople />
               </div>
             }
-            // value={isLoading ? "..." : dashboardMetrics.total_employees || 0}
-            value={isLoading ? "..." : totalApiPages || 0}
+            value={isLoading ? "..." : dashboardMetrics?.total_employees || 0}
           />
         </div>
         <div className="lg:min-w-[calc((100%/4)-16px)]! md:min-w-[33.3%]! min-w-[310px]">
@@ -88,7 +47,7 @@ const Dashboard = () => {
                 <MdAttachMoney />
               </div>
             }
-            value={isLoading ? "..." : dashboardMetrics.total_salary_paid || 0}
+            value={isLoading ? "..." : formatterUtility(Number(dashboardMetrics.total_salary_paid)) || 0}
           />
         </div>
         <div className="lg:min-w-[calc((100%/4)-16px)]! md:min-w-[33.3%]! min-w-[310px]">
@@ -110,7 +69,7 @@ const Dashboard = () => {
                 <MdTrendingUp />
               </div>
             }
-            value={isLoading ? "..." : formatterUtility(Number(estimatedSalries)) || 0}
+            value={isLoading ? "..." : formatterUtility(Number(dashboardMetrics?.total_estimated_salary)) || 0}
           />
         </div>
       </div>

@@ -73,7 +73,7 @@ const AllEmployees = () => {
 
     try {
       const response = await api.get(
-        `/all_employers?&page=${currentPageFromApi}&per_page=${searchQuery ? availableEntries : apiItemsPerPage}`,
+        `/all_employers?search=${searchQuery}&page=${currentPageFromApi}&per_page=${apiItemsPerPage}`,
         {
           headers: {
             "Content-Type": "application/json",
@@ -121,70 +121,13 @@ const AllEmployees = () => {
     }
   }, [token, searchQuery, currentPageFromApi, apiItemsPerPage]);
 
-  const fetchAllEmployees = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      // Fetch page 1 first
-      const firstPage = await api.get(`/all_employers?page=1&per_page=${apiItemsPerPage}`, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      const { data, last_page } = firstPage.data.data;
-
-      let allEmployees = [...data];
-
-      // Fetch all remaining pages
-      for (let page = 2; page <= last_page; page++) {
-        const res = await api.get(`/all_employers?page=${page}&per_page=${apiItemsPerPage}`, {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        allEmployees = [...allEmployees, ...res.data.data.data];
-      }
-
-      // Update state with all employees
-      setEmployees(allEmployees);
-      setTotalApiPages(last_page);
-      setAvailableEntries(allEmployees.length);
-
-    } catch (err) {
-      console.error("Error fetching ALL employees:", err);
-      setError(err);
-      toast.error("Failed to load all employees.");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [token]);
-
-  // useEffect(() => {
-  //   const delayDebounce = setTimeout(() => {
-  //     fetchEmployees();
-  //   }, 500);
-
-  //   return () => clearTimeout(delayDebounce);
-  // }, [fetchEmployees]);
   useEffect(() => {
     const delayDebounce = setTimeout(() => {
-      if (searchQuery.trim() !== "") {
-        // User is searching → fetch ALL first
-        fetchAllEmployees();
-      } else {
-        // No search → normal paginated fetch
-        fetchEmployees();
-      }
+      fetchEmployees();
     }, 500);
 
     return () => clearTimeout(delayDebounce);
-  }, [searchQuery, fetchEmployees, fetchAllEmployees]);
-
+  }, [fetchEmployees]);
 
   useEffect(() => {
     setCurrentPageFromApi(1);
@@ -194,12 +137,8 @@ const AllEmployees = () => {
     const statusMatches =
       selectedStatus === "all" ||
       data.employmentType?.toLowerCase() === selectedStatus.toLowerCase();
-      
-    const query = searchQuery.trim().toLowerCase();
-    const nameMatches =
-      query === "" ||
-      (data.full_name || "").toLowerCase().includes(query);
-    return statusMatches && nameMatches;
+
+    return statusMatches;
   });
 
   // Function to show the confirmation modal
