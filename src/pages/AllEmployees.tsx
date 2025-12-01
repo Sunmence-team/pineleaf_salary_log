@@ -33,7 +33,6 @@ const AllEmployees = () => {
 
   const [currentPageFromApi, setCurrentPageFromApi] = useState(1);
   const [totalApiPages, setTotalApiPages] = useState(1);
-  const [availableEntries, setAvailableEntries] = useState(1);
 
   const apiItemsPerPage = 5;
 
@@ -88,7 +87,6 @@ const AllEmployees = () => {
         setEmployees(response.data.data.data);
         setCurrentPageFromApi(response.data.data.current_page);
         setTotalApiPages(response.data.data.last_page);
-        setAvailableEntries(response.data.data.total);
       } else {
         toast.error(
           `Failed to fetch employees: ${
