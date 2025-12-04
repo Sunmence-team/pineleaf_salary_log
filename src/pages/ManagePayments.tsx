@@ -158,9 +158,6 @@ const ManagePayments: React.FC = () => {
     }
   };
 
-  const employeeToPay = employees.find((e) => {
-    return e.paying === 1;
-  });
 
   const handlePinDialog = () => {
     setShowConfirmModal(false);
