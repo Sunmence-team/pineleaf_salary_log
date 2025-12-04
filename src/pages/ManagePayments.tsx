@@ -178,8 +178,7 @@ const ManagePayments: React.FC = () => {
             disabled={
               isLoading ||
               employees.length === 0 ||
-              isProcessingPayment ||
-              !employeeToPay
+              isProcessingPayment
             }
             className="flex items-center gap-2 px-4 py-2 cursor-pointer rounded-lg bg-pryClr text-white hover:opacity-95 disabled:opacity-50 transition"
             title="Initialize payment for all employees"
