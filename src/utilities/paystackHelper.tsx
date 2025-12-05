@@ -1,6 +1,5 @@
 // utilities/paystackHelper.js
 import axios from "axios";
-import type { bankProps } from "../store/sharedinterfaces";
 
 const PAYSTACK_SECRET_KEY = import.meta.env.VITE_PAYSTACK_SECRET_KEY;
 
@@ -25,21 +24,6 @@ export const fetchPaystackBanks = async () => {
     return [];
   }
 };
-
-/**
- * Get bank code by name
- * @param {string} bankName - e.g. "Access Bank"
- * @param {Array} banks - array of banks from Paystack
- */
-
-export const getBankCode = (bankName: string, banks: bankProps[]) => {
-  if (!banks || banks.length === 0) return "";
-  const match = banks.find(
-    (bank) => bank.name.toLowerCase() === bankName?.toLowerCase()
-  );
-  return match ? match.code : "";
-};
-
 
 /**
  * Resolves bank account number to get account name.

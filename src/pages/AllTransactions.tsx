@@ -66,15 +66,6 @@ const AllTransactions: React.FC<AllCotransactionsProps> = ({ isRecent }) => {
       } else {
         toast.error("No transactions found");
       }
-      // if (err.code === "ECONNABORTED") {
-      //   toast.error("Request timed out. Please try again.");
-      // } else if (err.response) {
-      // } else if (err.request) {
-      //   toast.error("Server not responding. Please check your connection.");
-      // } else {
-      //   toast.error("Unexpected error occurred. Please try again.");
-      // }
-      // setError(err);
       console.error("Unexpected error occurred. Please try again.", err);
     } finally {
       setIsLoading(false);

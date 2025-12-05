@@ -50,6 +50,7 @@ const AddEmployee = () => {
     'Abia',
     'Nnewi',
     'Enugu',
+    'Amuwo odofin Lagos',
   ]
 
   useEffect(() => {

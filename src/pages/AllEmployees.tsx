@@ -46,27 +46,12 @@ const AllEmployees = () => {
   const [employeeToDelete, setEmployeeToDelete] =
     useState<employeeProps | null>(null);
 
-  // const toggleDropdown = (dropdownName: boolean) => {
-  //   setOpenDropdown(openDropdown === dropdownName ? false : dropdownName);
-  // };
-
   const editAction = () => {
     setShowEditModal(false);
     fetchEmployees();
   };
 
   const fetchEmployees = useCallback(async () => {
-    // if (!token) {
-    //   const load = toast.loading("Session timed out. logging out");
-    //   console.error("Token not available, skipping employees fetch.");
-    //   setIsLoading(false);
-    //   setTimeout(() => {
-    //     logout();
-    //     toast.dismiss(load);
-    //   }, 500);
-    //   return;
-    // }
-
     setIsLoading(true);
     setError(null);
 
