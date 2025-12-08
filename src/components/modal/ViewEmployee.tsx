@@ -7,7 +7,7 @@ interface ViewEmployeeProps {
   employee: employeeProps | null;
   onClose: () => void;
   onUpdate: () => void;
-showEditButton: boolean;
+showEditButton?: boolean;
 }
 
 const ViewEmployee = ({
