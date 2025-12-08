@@ -7,6 +7,7 @@ interface ViewEmployeeProps {
   employee: employeeProps | null;
   onClose: () => void;
   onUpdate: () => void;
+showEditButton: boolean;
 }
 
 const ViewEmployee = ({
@@ -15,6 +16,7 @@ const ViewEmployee = ({
   employee,
   onClose,
   onUpdate,
+showEditButton = true
 }: ViewEmployeeProps) => {
   if (!isOpen) return null;
 
@@ -97,7 +99,9 @@ const ViewEmployee = ({
           </div>
         </div>
 
-        <div className="md:col-span-2">
+{
+ showEditButton && (
+<div className="md:col-span-2">
           <button
             type="button"
             onClick={onUpdate}
@@ -106,6 +110,9 @@ const ViewEmployee = ({
             Edit Details
           </button>
         </div>
+)
+}
+        
       </div>
     </Modal>
   );
