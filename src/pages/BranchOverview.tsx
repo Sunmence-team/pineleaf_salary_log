@@ -1,9 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react'
 import { useUser } from '../context/UserContext';
 import api from '../utilities/api';
-import { toast } from 'sonner';
 import type { branchOveriewProps, employeeProps } from '../store/sharedinterfaces';
-import { formatISODateToCustom, formatterUtility } from '../utilities/FormatterUtility';
+import { formatterUtility } from '../utilities/FormatterUtility';
 import { MdRemoveRedEye } from 'react-icons/md';
 import ViewEmployee from '../components/modal/ViewEmployee';
 
@@ -180,13 +179,13 @@ const BranchOverview: React.FC = () => {
                 </table>
             </div>
 
-            {/* <ViewEmployee
-                isOpen={showViewModal}
-                title={`${selectedemployee?.full_name} Details`}
-                employee={selectedemployee}
-                onClose={() => setShowViewModal(false)}
-                onUpdate={() => closeAndEdit()}
-                /> */}
+            <ViewEmployee
+                isOpen={Boolean(selectedEmployee)}
+                title={`${selectedEmployee?.full_name} Details`}
+                employee={selectedEmployee}
+                onClose={() => setSelectedEmployee(null)}
+                onUpdate={() => {}}
+                />
         </div>
     )
 }
