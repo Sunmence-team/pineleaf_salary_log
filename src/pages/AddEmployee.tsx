@@ -10,6 +10,8 @@ import type { bankProps } from "../store/sharedinterfaces";
 import api from "../utilities/api";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
+const COUNTRY_URL = import.meta.env.VITE_COUNTRY_BASE_URL;
+
 interface CountryApiResponse {
   error: boolean;
   ok: boolean;
@@ -219,7 +221,7 @@ const AddEmployee = () => {
       setLoadingCountries(true);
       try {
         const response = await fetch(
-          "https://csc.sidsworld.co.in/api/countries"
+          `${COUNTRY_URL}/api/countries`
         );
         const resData: CountryApiResponse = await response.json();
 
@@ -227,7 +229,7 @@ const AddEmployee = () => {
           throw new Error(`Request failed with status ${response.status}`);
         }
 
-        if (!resData.countries || resData.countries.length === 0) {
+        if (!resData || resData.length === 0) {
           throw new Error('No countries found');
         }
 
@@ -236,13 +238,13 @@ const AddEmployee = () => {
           throw new Error(resData.msg || "Failed to fetch countries");
         }
 
-        const countryList = resData.countries
+        const countryList = resData
           .map(c => ({ name: c.name, id: c.id, iso2: c.iso2 }))
           .sort((a, b) => a.name.localeCompare(b.name));
 
         const idMap: Record<string, number> = {};
 
-        resData.countries.forEach(c => {
+        resData.forEach(c => {
           idMap[c.name] = c.id;
         });
 
@@ -267,11 +269,13 @@ const AddEmployee = () => {
         setLoadingStates(true);
         const countryId = countryIdMap[formik.values.country];
         try {
-          const response = await fetch(`https://csc.sidsworld.co.in/api/states/${countryId}`);
+          const response = await fetch(
+          `${COUNTRY_URL}/api/countries/${countryId}/states`
+        );
           const result = await response.json();
           if (result.error) throw new Error(result.msg);
 
-          const stateList = result.states?.map((s: StateItem) => s.name) || [];
+          const stateList = result?.map((s: StateItem) => s.name) || [];
           setStates(stateList.sort());
           formik.setFieldValue("state", "");
         } catch (error) {
