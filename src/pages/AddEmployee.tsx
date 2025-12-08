@@ -223,7 +223,7 @@ const AddEmployee = () => {
         const response = await fetch(
           `${COUNTRY_URL}/api/countries`
         );
-        const resData: CountryApiResponse = await response.json();
+        const resData = await response.json();
 
         if (!response.ok) {
           throw new Error(`Request failed with status ${response.status}`);
