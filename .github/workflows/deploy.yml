@@ -27,8 +27,7 @@ jobs:
           echo "VITE_PAYSTACK_SECRET_KEY=${{ secrets.VITE_PAYSTACK_SECRET_KEY }}" >> .env
           echo "VITE_COUNTRY_BASE_URL=${{ secrets.VITE_COUNTRY_BASE_URL }}" >> .env
           npm run build
-
-
+          
       - name: Deploy to Hostinger FTP
         uses: SamKirkland/FTP-Deploy-Action@4.3.3
         with:

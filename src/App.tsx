@@ -7,6 +7,7 @@ import AddEmployee from "./pages/AddEmployee";
 import AllEmployees from "./pages/AllEmployees";
 import ManagePayments from "./pages/ManagePayments";
 import AllTransactions from "./pages/AllTransactions";
+import BranchOverview from "./pages/BranchOverview";
 
 function App() {
   return (
@@ -48,6 +49,15 @@ function App() {
             <MainLayout
               pageName="All Transactions"
               children={<AllTransactions isRecent={false} />}
+            />
+          }
+        />
+        <Route
+          path={"/branchoverview"}
+          element={
+            <MainLayout
+              pageName="Branch Overview"
+              children={<BranchOverview />}
             />
           }
         />

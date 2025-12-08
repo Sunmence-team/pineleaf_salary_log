@@ -13,6 +13,7 @@ import { RiUserAddLine, RiUserMinusLine } from "react-icons/ri";
 import { FiSearch } from "react-icons/fi";
 import { MdOutlineFilterAlt } from "react-icons/md";
 import { TbUsersPlus, TbUsersMinus } from "react-icons/tb";
+import { generatePerPageOptions } from "../utilities/generatePerPageOptions";
 
 const ManagePayments: React.FC = () => {
   const { token, logout } = useUser();
@@ -30,7 +31,10 @@ const ManagePayments: React.FC = () => {
 
   const [currentPageFromApi, setCurrentPageFromApi] = useState<number>(1);
   const [totalApiPages, setTotalApiPages] = useState<number>(1);
-  const [apiItemsPerPage, setApiItemsPerPage] = useState<number>(5);
+  const [totalItems, setTotalItems] = useState<number>(1);
+  const [apiItemsPerPage, setApiItemsPerPage] = useState<number>(10);
+  const [options, setOptions] = useState<number[]>([]);
+
   const [showConfirmModal, setShowConfirmModal] = useState<boolean>(false);
   const [showUpdateConfirmModal, setShowUpdateConfirmModal] =
     useState<boolean>(false);
@@ -39,6 +43,16 @@ const ManagePayments: React.FC = () => {
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [selectedEmployee, setSelectedEmployee] =
     useState<employeeProps | null>(null);
+
+  useEffect(() => {
+    const newOptions: number[] = generatePerPageOptions(totalItems, 5);
+    setOptions(newOptions);
+    
+    if (!newOptions.includes(apiItemsPerPage)) {
+      setApiItemsPerPage(newOptions[0]); 
+    }
+
+  }, [totalItems]);
 
   const fetchEmployees = useCallback(async () => {
     if (!token) return;
@@ -61,6 +75,7 @@ const ManagePayments: React.FC = () => {
         setEmployees(response.data.data.data ?? []);
         setCurrentPageFromApi(response.data.data.current_page ?? 1);
         setTotalApiPages(response.data.data.last_page ?? 1);
+        setTotalItems(response.data.data.total ?? 1);
       } else {
         toast.error(response.data?.message ?? "Failed to fetch employees");
         setEmployees([]);
@@ -186,16 +201,15 @@ const ManagePayments: React.FC = () => {
           fetchEmployees();
           setuserIdsToBeActedOn([]);
         } else {
-          toast.error(response.data?.message || "An error occurred.");
+          toast.error(response.data?.message || "An error occurred.", { id: loadingId });
         }
       } catch (err: any) {
         console.error("Error during bulk update:", err);
         toast.error(
-          err.response?.data?.message || "An unexpected error occurred."
+          err.response?.data?.message || "An unexpected error occurred.", { id: loadingId }
         );
       } finally {
         setUpdatingStatus(false);
-        toast.dismiss("bulk-action-toast");
       }
     },
     [userIdsToBeActedOn, fetchEmployees]
@@ -205,6 +219,30 @@ const ManagePayments: React.FC = () => {
     setShowConfirmModal(false);
     setShowVerificationCodeDialog(true);
   };
+
+  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { checked } = e.target;
+    setuserIdsToBeActedOn((prevSelectedIds) => {
+        const currentEmployeeIds = employees.map((emp) => Number(emp.id));
+        if (checked) {
+            // Add all current page employee IDs that are not already selected
+            const newSelectedIds = [
+                ...new Set([...prevSelectedIds, ...currentEmployeeIds]),
+            ];
+            return newSelectedIds;
+        } else {
+            // Remove all current page employee IDs from selected
+            const remainingSelectedIds = prevSelectedIds.filter(
+                (id) => !currentEmployeeIds.includes(id)
+            );
+            return remainingSelectedIds;
+        }
+    });
+  };
+
+  const allEmployeeIdsOnPage = employees.map(emp => Number(emp.id));
+  const allSelectedOnPage = allEmployeeIdsOnPage.length > 0 && allEmployeeIdsOnPage.every(id => userIdsToBeActedOn.includes(id));
+  const someSelectedOnPage = allEmployeeIdsOnPage.some(id => userIdsToBeActedOn.includes(id)) && !allSelectedOnPage;
 
   return (
     <div className="flex flex-col gap-8 px-4 md:px-6 relative">
@@ -262,10 +300,15 @@ const ManagePayments: React.FC = () => {
               name="itemsPerPage" 
               id="itemsPerPage"
               className="border border-pryClr/10 h-10 rounded-md indent-2 outline-0 min-w-36"
-              onChange={(e) => setApiItemsPerPage(Number(e.target.value))}
+              onChange={(e) => {
+                if (currentPageFromApi !== 1) {
+                  setCurrentPageFromApi(1)
+                }
+                setApiItemsPerPage(Number(e.target.value))
+              }}
             >
               {
-                [5, 10, 15, 20, 25, 30, 35, 40].map((num, index) => (
+                options?.map((num, index) => (
                   <option key={index} value={num}>{num}</option>
                 ))
               }
@@ -277,7 +320,12 @@ const ManagePayments: React.FC = () => {
               name="itemsPerPage" 
               id="itemsPerPage"
               className="border border-pryClr/10 h-10 rounded-md indent-2 outline-0 min-w-36"
-              onChange={(e) => setPaymentStatus(Number(e.target.value))}
+              onChange={(e) => {
+                if (currentPageFromApi !== 1) {
+                  setCurrentPageFromApi(1)
+                }
+                setPaymentStatus(Number(e.target.value))
+              }}
               defaultValue={""}
             >
               <option value={""} disabled>Select Payment status</option>
@@ -305,7 +353,19 @@ const ManagePayments: React.FC = () => {
         <table className="w-full text-center">
           <thead>
             <tr className="bg-white/61 h-[77px]">
-              <th className="p-4 text-xs whitespace-nowrap"></th>
+              <th className="p-4 text-xs whitespace-nowrap">
+                <input
+                  type="checkbox"
+                  className="accent-pryClr size-6"
+                  checked={allSelectedOnPage}
+                  onChange={handleSelectAll}
+                  ref={el => {
+                    if (el) {
+                      el.indeterminate = someSelectedOnPage;
+                    }
+                  }}
+                />
+              </th>
               <th className="p-4 text-xs whitespace-nowrap">S/N</th>
               <th className="p-4 text-xs whitespace-nowrap">
                 Full Name
@@ -448,33 +508,31 @@ const ManagePayments: React.FC = () => {
 
       {
         userIdsToBeActedOn.length > 0 && (
-          <div className="bg-transparent fixed z-999 w-full flex items-center justify-end left-0 bottom-8 px-6">
-            <div className="w-full bg-white max-w-[320px] rounded-lg shadow-2xl border border-pryClr/10 p-4 flex gap-2 items-center justify-center">
-              <p className="font-medium">
-                {userIdsToBeActedOn.length} employee(s) selected.
-              </p>
-              <div className="flex gap-2">
-                <button
-                  className="w-full px-3 h-10 rounded-md cursor-pointer text-sm text-pryClr hover:bg-pryClr/10 hover:opacity-90"
-                  title="Include Selected"
-                  disabled={updatingStatus}
-                  onClick={() => {
-                    handleBulkUpdate(1);
-                  }}
-                >
-                  <TbUsersPlus size={18} />
-                </button>
-                <button
-                  className="w-full px-3 h-10 rounded-md cursor-pointer text-sm text-red-600 hover:bg-red-600/10 hover:opacity-90"
-                  title="Exclude Selected"
-                  disabled={updatingStatus}
-                  onClick={() => {
-                    handleBulkUpdate(0);
-                  }}
-                >
-                  <TbUsersMinus size={18} />
-                </button>
-              </div>
+          <div className="fixed z-999 right-6 bottom-8 bg-white max-w-[320px] rounded-lg shadow-2xl border border-pryClr/10 p-4 flex gap-2 items-center justify-center">
+            <p className="font-medium">
+              {userIdsToBeActedOn.length} employee(s) selected.
+            </p>
+            <div className="flex gap-2">
+              <button
+                className="w-full px-3 h-10 rounded-md cursor-pointer text-sm text-pryClr hover:bg-pryClr/10 hover:opacity-90"
+                title="Include Selected"
+                disabled={updatingStatus}
+                onClick={() => {
+                  handleBulkUpdate(1);
+                }}
+              >
+                <TbUsersPlus size={18} />
+              </button>
+              <button
+                className="w-full px-3 h-10 rounded-md cursor-pointer text-sm text-red-600 hover:bg-red-600/10 hover:opacity-90"
+                title="Exclude Selected"
+                disabled={updatingStatus}
+                onClick={() => {
+                  handleBulkUpdate(0);
+                }}
+              >
+                <TbUsersMinus size={18} />
+              </button>
             </div>
           </div>
         )

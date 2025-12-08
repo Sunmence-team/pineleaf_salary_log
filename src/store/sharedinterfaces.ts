@@ -40,3 +40,9 @@ export interface groupTransactionProps {
   count: number;
   payments: transactionsProps[];
 }
+
+export interface branchOveriewProps {
+  company_branch: string;
+  total_employees: number;
+  employers: employeeProps[];
+}

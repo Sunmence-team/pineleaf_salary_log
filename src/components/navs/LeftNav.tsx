@@ -4,6 +4,7 @@ import { NavLink } from 'react-router-dom';
 import { MdOutlineDashboard, MdOutlinePeopleAlt } from 'react-icons/md';
 import { FaUsersCog } from 'react-icons/fa';
 import { RiSecurePaymentLine } from 'react-icons/ri';
+import { IoIosGitBranch } from "react-icons/io";
 
 const LeftNav = ({ setIsOpen }: { setIsOpen:React.Dispatch<React.SetStateAction<boolean>> }) => {
 
@@ -22,6 +23,11 @@ const LeftNav = ({ setIsOpen }: { setIsOpen:React.Dispatch<React.SetStateAction<
             name: 'Manage Employees',
             icon: <FaUsersCog size={20} />,
             path: '/managemployees',
+        },
+        {
+            name: 'Branch Overviews',
+            icon: <IoIosGitBranch size={20} />,
+            path: '/branchoverview',
         },
         {
             name: 'Payments',

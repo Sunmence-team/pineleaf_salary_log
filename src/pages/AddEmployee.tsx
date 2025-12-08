@@ -8,15 +8,16 @@ import {
 } from "../utilities/paystackHelper";
 import type { bankProps } from "../store/sharedinterfaces";
 import api from "../utilities/api";
+import axios from "axios";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
 const COUNTRY_URL = import.meta.env.VITE_COUNTRY_BASE_URL;
 
 interface CountryApiResponse {
-    name: string;
-    id: number;
-    iso2: string;
-}[];
+  name: string;
+  id: number;
+  iso2: string;
+};
 
 interface StateItem {
   name: string;
@@ -212,25 +213,19 @@ const AddEmployee = () => {
   };
 
   useEffect(() => {
-    const fetchCountries = async (): Promise<void> => {
+    const fetchCountries = async () => {
       setLoadingCountries(true);
       try {
-        const response = await fetch(
-          `${COUNTRY_URL}/api/countries`
-        );
-        const resData: CountryApiResponse = await response.json();
+        const response = await axios.get(`${COUNTRY_URL}/api/countries`);
+        console.log("response", response)
+        const resData: CountryApiResponse[] = response.data
 
-        if (!response.ok) {
+        if (response.status !== 200) {
           throw new Error(`Request failed with status ${response.status}`);
         }
 
         if (!resData || resData.length === 0) {
           throw new Error('No countries found');
-        }
-
-
-        if (resData.error) {
-          throw new Error(resData.msg || "Failed to fetch countries");
         }
 
         const countryList = resData
@@ -248,9 +243,7 @@ const AddEmployee = () => {
 
         setCountries(countryList.map((c) => c.name));
       } catch (error) {
-        const message =
-          error instanceof Error ? error.message : "An unknown error occurred";
-        console.error("Error fetching countries:", message);
+        console.error("Error fetching countries:", error);
       } finally {
         setLoadingCountries(false);
       }
@@ -312,7 +305,7 @@ const AddEmployee = () => {
               value={formik.values.firstName}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              className="h-[45px] text-sm indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
+              className="w-full h-[45px] text-sm indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
             />
             {formik.touched.firstName && formik.errors.firstName && (
               <p className="text-sm text-red-600">{formik.errors.firstName}</p>
@@ -331,7 +324,7 @@ const AddEmployee = () => {
               value={formik.values.lastName}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              className="h-[45px] text-sm indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
+              className="w-full h-[45px] text-sm indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
             />
             {formik.touched.lastName && formik.errors.lastName && (
               <p className="text-sm text-red-600">{formik.errors.lastName}</p>
@@ -350,7 +343,7 @@ const AddEmployee = () => {
               value={formik.values.email}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              className="h-[45px] text-sm indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
+              className="w-full h-[45px] text-sm indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
             />
             {formik.touched.email && formik.errors.email && (
               <p className="text-sm text-red-600">{formik.errors.email}</p>
@@ -369,7 +362,7 @@ const AddEmployee = () => {
               value={formik.values.phoneNumber}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              className="h-[45px] text-sm indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
+              className="w-full h-[45px] text-sm indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
             />
             {formik.touched.phoneNumber && formik.errors.phoneNumber && (
               <p className="text-sm text-red-600">
@@ -389,7 +382,7 @@ const AddEmployee = () => {
               value={formik.values.gender}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              className="h-[45px] text-sm indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
+              className="w-full h-[45px] text-sm indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
             >
               <option value="">Select Gender</option>
               <option value="male">Male</option>
@@ -412,7 +405,7 @@ const AddEmployee = () => {
               value={formik.values.dob}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              className="h-[45px] text-sm indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
+              className="w-full h-[45px] text-sm indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
             />
             {formik.touched.dob && formik.errors.dob && (
               <p className="text-sm text-red-600">{formik.errors.dob}</p>
@@ -429,7 +422,7 @@ const AddEmployee = () => {
               value={formik.values.country}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              className="h-[45px] text-sm indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
+              className="w-full h-[45px] text-sm indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
             >
               <option selected>
                 {loadingCountries
@@ -457,7 +450,7 @@ const AddEmployee = () => {
               value={formik.values.state}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              className="h-[45px] text-sm indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
+              className="w-full h-[45px] text-sm indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
             >
               <option selected>
                 {loadingStates
@@ -508,7 +501,7 @@ const AddEmployee = () => {
               value={formik.values.jobTitle}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              className="h-[45px] text-sm indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
+              className="w-full h-[45px] text-sm indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
             />
             {formik.touched.jobTitle && formik.errors.jobTitle && (
               <p className="text-sm text-red-600">{formik.errors.jobTitle}</p>
@@ -527,7 +520,7 @@ const AddEmployee = () => {
               value={formik.values.department}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              className="h-[45px] text-sm indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
+              className="w-full h-[45px] text-sm indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
             />
             {formik.touched.department && formik.errors.department && (
               <p className="text-sm text-red-600">{formik.errors.department}</p>
@@ -547,7 +540,7 @@ const AddEmployee = () => {
               value={formik.values.company_branch}
               defaultValue={""}
               disabled={branches.length === 0}
-              className="h-[45px] text-sm indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr disabled:bg-gray-100 disabled:cursor-not-allowed"
+              className="w-full h-[45px] text-sm indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr disabled:bg-gray-100 disabled:cursor-not-allowed"
             >
                <option disabled value="">
                 Pick Branch
@@ -574,7 +567,7 @@ const AddEmployee = () => {
               value={formik.values.employmentType}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              className="h-[45px] text-sm indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
+              className="w-full h-[45px] text-sm indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
             >
               <option value="">Select Employment Type</option>
               <option value="remote">Remote</option>
@@ -600,7 +593,7 @@ const AddEmployee = () => {
               value={formik.values.employmentDate}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              className="h-[45px] text-sm indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
+              className="w-full h-[45px] text-sm indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
             />
             {formik.touched.employmentDate && formik.errors.employmentDate && (
               <p className="text-sm text-red-600">
@@ -626,7 +619,7 @@ const AddEmployee = () => {
               onBlur={formik.handleBlur}
               value={formik.values.bank_name}
               disabled={isLoadingBanks}
-              className="h-[45px] text-sm indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr disabled:bg-gray-100 disabled:cursor-not-allowed"
+              className="w-full h-[45px] text-sm indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr disabled:bg-gray-100 disabled:cursor-not-allowed"
             >
               <option value="">
                 {isLoadingBanks ? "Loading Banks..." : "Select Bank"}
@@ -656,7 +649,7 @@ const AddEmployee = () => {
               onBlur={formik.handleBlur}
               maxLength={10}
               placeholder="Enter 10-digit account number"
-              className="h-[45px] text-sm indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
+              className="w-full h-[45px] text-sm indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
             />
             {formik.touched.account_number && formik.errors.account_number && (
               <p className="text-sm text-red-600">
@@ -684,7 +677,7 @@ const AddEmployee = () => {
                   ? "Resolving account name..."
                   : "Auto-filled after account number"
               }
-              className="h-[45px] text-sm indent-3 border border-gray-300 rounded-md focus:outline-none bg-gray-50 cursor-not-allowed"
+              className="w-full h-[45px] text-sm indent-3 border border-gray-300 rounded-md focus:outline-none bg-gray-50 cursor-not-allowed"
             />
             {formik.touched.account_name && formik.errors.account_name && (
               <p className="text-sm text-red-600">
@@ -706,7 +699,7 @@ const AddEmployee = () => {
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
               placeholder="Enter amount"
-              className="h-[45px] text-sm indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
+              className="w-full h-[45px] text-sm indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
             />
             {formik.touched.salary_amount && formik.errors.salary_amount && (
               <p className="text-sm text-red-600">
