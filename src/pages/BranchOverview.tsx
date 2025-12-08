@@ -186,6 +186,7 @@ const BranchOverview: React.FC = () => {
                 employee={selectedEmployee}
                 onClose={() => setSelectedEmployee(null)}
                 onUpdate={() => {}}
+showEditButton={false}
                 />
         </div>
     )
