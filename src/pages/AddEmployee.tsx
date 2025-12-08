@@ -13,14 +13,9 @@ const API_URL = import.meta.env.VITE_API_BASE_URL;
 const COUNTRY_URL = import.meta.env.VITE_COUNTRY_BASE_URL;
 
 interface CountryApiResponse {
-  error: boolean;
-  ok: boolean;
-  msg: string;
-  countries: {
     name: string;
     id: number;
     iso2: string;
-  }[];
 }
 
 interface StateItem {
@@ -238,7 +233,7 @@ const AddEmployee = () => {
           throw new Error(resData.msg || "Failed to fetch countries");
         }
 
-        const countryList = resData
+        const countryList: CountryApiResponse = resData
           .map(c => ({ name: c.name, id: c.id, iso2: c.iso2 }))
           .sort((a, b) => a.name.localeCompare(b.name));
 
