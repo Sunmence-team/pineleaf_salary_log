@@ -16,7 +16,7 @@ interface CountryApiResponse {
     name: string;
     id: number;
     iso2: string;
-}
+}[];
 
 interface StateItem {
   name: string;
@@ -218,7 +218,7 @@ const AddEmployee = () => {
         const response = await fetch(
           `${COUNTRY_URL}/api/countries`
         );
-        const resData = await response.json();
+        const resData: CountryApiResponse = await response.json();
 
         if (!response.ok) {
           throw new Error(`Request failed with status ${response.status}`);
@@ -233,7 +233,7 @@ const AddEmployee = () => {
           throw new Error(resData.msg || "Failed to fetch countries");
         }
 
-        const countryList: CountryApiResponse = resData
+        const countryList = resData
           .map(c => ({ name: c.name, id: c.id, iso2: c.iso2 }))
           .sort((a, b) => a.name.localeCompare(b.name));
 
