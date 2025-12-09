@@ -15,12 +15,30 @@ import { MdOutlineFilterAlt } from "react-icons/md";
 import { TbUsersPlus, TbUsersMinus } from "react-icons/tb";
 import { generatePerPageOptions } from "../utilities/generatePerPageOptions";
 
+const branches = [
+  'HQ - Onitsha',
+  'Mgbuka',
+  'Awka',
+  'Asaba',
+  'Owerri',
+  'Port Harcourt',
+  'Lagos Ajah',
+  'Lagos Apapa',
+  'Enugwu-Ukwu',
+  'Abuja',
+  'Abia',
+  'Nnewi',
+  'Enugu',
+  'Amuwo odofin Lagos',
+]
+
 const ManagePayments: React.FC = () => {
   const { token, logout } = useUser();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<number | null>(null);
+  const [branchFilter, setBranchFilter] = useState<string | null>("");
   const [userIdsToBeActedOn, setuserIdsToBeActedOn] = useState<number[]>([]);
   
   const [employees, setEmployees] = useState<employeeProps[]>([]);
@@ -62,7 +80,7 @@ const ManagePayments: React.FC = () => {
 
     try {
       const response = await api.get(
-        `/all_employers?search=${searchQuery}&page=${currentPageFromApi}&per_page=${apiItemsPerPage}&paying=${paymentStatus !== 0 && paymentStatus !== 1 ? '' : paymentStatus}`,
+        `/all_employers?search=${searchQuery}&page=${currentPageFromApi}&per_page=${apiItemsPerPage}&paying=${paymentStatus !== 0 && paymentStatus !== 1 ? '' : paymentStatus}&company_branch=${branchFilter}`,
         {
           headers: {
             "Content-Type": "application/json",
@@ -101,7 +119,7 @@ const ManagePayments: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [token, searchQuery, currentPageFromApi, apiItemsPerPage, paymentStatus, logout]);
+  }, [token, searchQuery, currentPageFromApi, apiItemsPerPage, branchFilter, paymentStatus, logout]);
 
   useEffect(() => {
     fetchEmployees();
@@ -292,7 +310,7 @@ const ManagePayments: React.FC = () => {
         {/* Expanded filters */}
         <div
           hidden={!showMobileFilters}
-          className="relative w-full bg-white p-4 rounded-lg flex items-center justify-between gap-4"
+          className="relative w-full bg-white p-4 rounded-lg grid md:grid-cols-3 grid-cols-1 items-center gap-4"
         >
           <div className="flex flex-col text-xs gap-2">
             <label htmlFor="itemsPerPage">Items Per Page</label>
@@ -310,6 +328,26 @@ const ManagePayments: React.FC = () => {
               {
                 options?.map((num, index) => (
                   <option key={index} value={num}>{num}</option>
+                ))
+              }
+            </select>
+          </div>
+          <div className="flex flex-col text-xs gap-2">
+            <label htmlFor="branches">Branch</label>
+            <select 
+              name="branches" 
+              id="branches"
+              className="border border-pryClr/10 h-10 rounded-md indent-2 outline-0 min-w-36"
+              onChange={(e) => {
+                if (currentPageFromApi !== 1) {
+                  setCurrentPageFromApi(1)
+                }
+                setBranchFilter(e.target.value)
+              }}
+            >
+              {
+                branches.map((branch, index) => (
+                  <option key={index} value={branch}>{branch}</option>
                 ))
               }
             </select>
@@ -377,7 +415,7 @@ const ManagePayments: React.FC = () => {
                 Department
               </th>
               <th className="p-4 text-xs whitespace-nowrap">Pay</th>
-              {/* <th className="p-4 text-xs whitespace-nowrap">Date</th> */}
+              <th className="p-4 text-xs whitespace-nowrap">Branch</th>
               <th className="p-4 text-xs whitespace-nowrap">
                 Action
               </th>
@@ -388,7 +426,7 @@ const ManagePayments: React.FC = () => {
             {isLoading ? (
               <tr className="bg-white/61">
                 <td
-                  colSpan={7}
+                  colSpan={8}
                   className="p-4 text-center border-t border-black/10 text-gray-500"
                 >
                   Loading employees...
@@ -397,7 +435,7 @@ const ManagePayments: React.FC = () => {
             ) : error ? (
               <tr className="bg-white/61">
                 <td
-                  colSpan={7}
+                  colSpan={8}
                   className="p-4 text-center border-t border-black/10 text-gray-500"
                 >
                   {error?.message ?? "Error loading employees"}
@@ -406,7 +444,7 @@ const ManagePayments: React.FC = () => {
             ) : employees.length === 0 ? (
               <tr>
                 <td
-                  colSpan={7}
+                  colSpan={8}
                   className="text-center bg-white/61 py-4 border-y border-black/10"
                 >
                   No employees found.
@@ -465,6 +503,10 @@ const ManagePayments: React.FC = () => {
                       : formatterUtility(Number(employee.salary_amount)) ?? "-"}
                   </td>
 
+                  <td className="p-2 text-xs whitespace-nowrap">
+                    {employee.company_branch ?? "-"}
+                  </td>
+
                   <td className="p-4 text-xs whitespace-nowrap text-pryClr font-bold">
                     <button
                       className={`cursor-pointer disabled:cursor-not-allowed disabled:opacity-25 text- mx-auto w-10 h-10 flex justify-center items-center rounded-md duration-200 transition-all ${
@@ -494,7 +536,7 @@ const ManagePayments: React.FC = () => {
 
           <tfoot>
             <tr className={"bg-white/61 h-[77px] border-t border-black/10"}>
-              <td className="text-center p-4" colSpan={7}>
+              <td className="text-center p-4" colSpan={8}>
                 <PaginationControls
                   currentPage={currentPageFromApi}
                   totalPages={totalApiPages}

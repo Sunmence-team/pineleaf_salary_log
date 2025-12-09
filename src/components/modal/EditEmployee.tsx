@@ -10,22 +10,32 @@ import { useFormik } from "formik";
 import * as Yup from "yup";
 import api from "../../utilities/api";
 import { useUser } from "../../context/UserContext";
+import axios from "axios";
 
-type CountryItem = {
-  name: string;
-  isoCode?: string;
-};
+const COUNTRY_URL = import.meta.env.VITE_COUNTRY_BASE_URL;
 
 interface CountryApiResponse {
-  error: boolean;
-  msg?: string;
-  data: Array<{
-    country: string;
-    iso2?: string;
-    states?: Array<{ name: string }>;
-  }>;
-}
+  name: string;
+  id: number;
+  iso2: string;
+};
 
+const branches = [
+  'HQ - Onitsha',
+  'Mgbuka',
+  'Awka',
+  'Asaba',
+  'Owerri',
+  'Port Harcourt',
+  'Lagos Ajah',
+  'Lagos Apapa',
+  'Enugwu-Ukwu',
+  'Abuja',
+  'Abia',
+  'Nnewi',
+  'Enugu',
+  'Amuwo odofin Lagos',
+]
 interface EditEmployeeProps {
   isOpen: boolean;
   title?: string;
@@ -51,21 +61,8 @@ const EditEmployee = ({
   const [loadingCountries, setLoadingCountries] = useState(false);
   const [states, setStates] = useState<string[]>([]);
   const [loadingStates, setLoadingStates] = useState(false);
-  const branches = [
-    "HQ - Onitsha",
-    "Mgbuka",
-    "Awka",
-    "Asaba",
-    "Owerri",
-    "Port Harcourt",
-    "Lagos Ajah",
-    "Lagos Apapa",
-    "Enugwu-Ukwu",
-    "Abuja",
-    "Abia",
-    "Nnewi",
-    "Enugu",
-  ];
+  const [countryIdMap, setCountryIdMap] = useState<Record<string, number>>({});
+  
   const [selectedBankCode, setSelectedBankCode] = useState("");
   const { token, logout } = useUser();
 
@@ -86,30 +83,33 @@ const EditEmployee = ({
   }, []);
 
   useEffect(() => {
-    const fetchCountries = async (): Promise<void> => {
+    const fetchCountries = async () => {
       setLoadingCountries(true);
       try {
-        const response = await fetch(
-          "https://countriesnow.space/api/v0.1/countries"
-        );
+        const response = await axios.get(`${COUNTRY_URL}/api/countries`);
 
-        if (!response.ok) {
+        const resData: CountryApiResponse[] = response.data
+
+        if (response.status !== 200) {
           throw new Error(`Request failed with status ${response.status}`);
         }
 
-        const resData: CountryApiResponse = await response.json();
-
-        if (resData.error) {
-          throw new Error(resData.msg || "Failed to fetch countries");
+        if (!resData || resData.length === 0) {
+          throw new Error('No countries found');
         }
 
-        const countryList: CountryItem[] = resData.data
-          .map((c) => ({ name: c.country, isoCode: c.iso2 }))
+        const countryList = resData
+          .map(c => ({ name: c.name, id: c.id, iso2: c.iso2 }))
           .sort((a, b) => a.name.localeCompare(b.name));
 
-        const countryMap = new Map<string, string>();
-        countryList.forEach((c) => countryMap.set(c.name, c.isoCode ?? ""));
+        const idMap: Record<string, number> = {};
 
+        resData.forEach(c => {
+          idMap[c.name] = c.id;
+        });
+
+        setCountries(countryList.map(c => c.name));
+        setCountryIdMap(idMap);
         setCountries(countryList.map((c) => c.name));
       } catch (error) {
         const message =
@@ -258,36 +258,32 @@ const EditEmployee = ({
   // }, [formik.values.country]);
 
   useEffect(() => {
-    if (formik.values.country) {
+    if (formik.values.country && Object.keys(countryIdMap).length > 0) {
       const fetchStates = async () => {
         setLoadingStates(true);
+        const countryId = countryIdMap[formik.values.country];
+
+        if (!countryId) {
+          setLoadingStates(false);
+          setStates([]);
+          formik.setFieldValue('state', '');
+          return;
+        }
+
         try {
-          const response = await fetch(
-            "https://countriesnow.space/api/v0.1/countries/states",
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ country: formik.values.country }),
-            }
-          );
+          const response = await fetch(`${COUNTRY_URL}/api/countries/${countryId}/states`);
           const result = await response.json();
           if (result.error) throw new Error(result.msg);
 
-          const stateList =
-            result.data?.states?.map((s: { name: string }) => s.name) || [];
+          const stateList = result?.map((s: { name: string }) => s.name) || [];
           setStates(stateList);
 
-          // Preserve an existing selection if it's valid; otherwise clear.
-          const currentState = formik.values.state || employee?.state || "";
-          if (currentState && stateList.includes(currentState)) {
-            formik.setFieldValue("state", currentState);
-          } else {
-            formik.setFieldValue("state", "");
+          if (!stateList.includes(formik.values.state)) {
+            formik.setFieldValue('state', '');
           }
         } catch (err) {
           setStates([]);
-          // try to keep employee.state if available, otherwise clear
-          formik.setFieldValue("state", employee?.state || "");
+          formik.setFieldValue('state', '');
         } finally {
           setLoadingStates(false);
         }
@@ -295,9 +291,8 @@ const EditEmployee = ({
       fetchStates();
     } else {
       setStates([]);
-      formik.setFieldValue("state", employee?.state || "");
     }
-  }, [formik.values.country]);
+  }, [formik.values.country, countryIdMap]);
 
   useEffect(() => {
     const resolveAccount = async () => {

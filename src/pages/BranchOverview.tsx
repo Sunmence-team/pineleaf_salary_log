@@ -4,8 +4,10 @@ import api from '../utilities/api';
 import { toast } from "sonner";
 import type { branchOveriewProps, employeeProps } from '../store/sharedinterfaces';
 import { formatterUtility } from '../utilities/FormatterUtility';
-import { MdRemoveRedEye } from 'react-icons/md';
+import { MdDelete, MdRemoveRedEye } from 'react-icons/md';
 import ViewEmployee from '../components/modal/ViewEmployee';
+import ConfirmDialog from '../components/modal/ConfirmDialog';
+import EditEmployee from '../components/modal/EditEmployee';
 
 const branches = [
     'HQ - Onitsha',
@@ -29,10 +31,18 @@ const BranchOverview: React.FC = () => {
     const [branchesOverview, setBranchesOverview] = useState<branchOveriewProps[]>([]);
     const [selectedBranch, setSelectedBranch] = useState<branchOveriewProps | null>(null);
     const [selectedEmployee, setSelectedEmployee] = useState<employeeProps | null>(null);
+
     const [isLoading, setIsLoading] = useState(true);
+    const [isDeleting, setIsDeleting] = useState(false);
+    
+    const [isEditing, setIsEditing] = useState(false);
+    const [isViewing, setIsViewing] = useState(false);
+    const [employeeToDelete, setEmployeeToDelete] = useState<employeeProps | null>(null);
+    
 
     const fetchBranchesOverview = useCallback(async () => {
         setIsLoading(true);
+        if (!token) return;
     
         try {
             const response = await api.get(`/filter_employers`, {
@@ -68,6 +78,72 @@ const BranchOverview: React.FC = () => {
         fetchBranchesOverview();
     }, [fetchBranchesOverview]);
 
+    // Function to show the confirmation modal
+    const confirmDeletion = (employee: employeeProps) => {
+        setEmployeeToDelete(employee);
+    };
+
+    const editAction = () => {
+        setSelectedEmployee(null);
+        setSelectedBranch(null);
+        fetchBranchesOverview();
+    };
+
+    // Function to handle the actual deletion API call
+    const handleDeleteEmployee = async () => {
+        setIsDeleting(true); // Start deleting process, disable button
+        try {
+            const response = await api.delete(
+                `/delete_employers/${employeeToDelete?.id}`,
+                {
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                }
+            );
+
+            // console.log("employees delete response", response);
+
+            if (response.status === 200) {
+                toast.success(response.data.message);
+
+                if (selectedBranch && employeeToDelete) {
+                    const updatedEmployers = selectedBranch.employers.filter(
+                        (emp) => Number(emp.id) !== Number(employeeToDelete.id)
+                    );
+                    setSelectedBranch({
+                        ...selectedBranch,
+                        employers: updatedEmployers,
+                        total_employees: selectedBranch.total_employees - 1,
+                    });
+
+                    setBranchesOverview((prevBranches) =>
+                        prevBranches.map((branch) => {
+                            if (branch.company_branch === selectedBranch.company_branch) {
+                                return {
+                                    ...branch,
+                                    employers: updatedEmployers,
+                                    total_employees: branch.total_employees - 1,
+                                };
+                            }
+                            return branch;
+                        })
+                    );
+                }
+            } else {
+                toast.error(response.data.message || "Failed to delete employee");
+            }
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || "Error deleting employee");
+            console.error("Error deleting employee", error);
+        } finally {
+            setIsDeleting(false);
+            setEmployeeToDelete(null);
+        }
+    };
+
+
     if (isLoading) {
         return (
             <div className='size-10 border-4 border-pryClr border-t-transparent rounded-full animate-spin mx-auto'></div>
@@ -81,7 +157,7 @@ const BranchOverview: React.FC = () => {
                     branchesOverview.map((branchOverview, index) => (
                         <div 
                             key={branchOverview?.company_branch + "" + index}
-                            className='bg-white cursor-pointer hover:scale-105 transition-all rounded-lg border border-pryClr/5 flex items-center justify-between p-6'
+                            className={`bg-white cursor-pointer hover:scale-[103%] transition-all rounded-lg border ${branchOverview?.company_branch === selectedBranch?.company_branch ? "border-pryClr border-2" : "border-pryClr/5"} flex items-center justify-between p-6`}
                             onClick={() => setSelectedBranch(branchOverview)}
                         >
                             <div className="flex flex-col items-center gap-1">
@@ -162,13 +238,25 @@ const BranchOverview: React.FC = () => {
                                     </td>
 
                                     <td className="p-4 text-xs whitespace-nowrap">
-                                        <div className="flex items-center gap-2">
+                                        <div className="flex justify-center items-center gap-2">
                                             <button
                                                 className="cursor-pointer text-pryClr disabled:cursor-not-allowed disabled:opacity-25 w-10 h-10 flex justify-center items-center hover:bg-pryClr/10 rounded-md duration-200 transition-all"
                                                 title="View employee details"
-                                                onClick={() => setSelectedEmployee(employee)}
+                                                onClick={() => {
+                                                    setIsViewing(true);
+                                                    setSelectedEmployee(employee)
+                                                }}
                                             >
                                                 <MdRemoveRedEye size={18} />
+                                            </button>
+                                            <button
+                                                className="cursor-pointer text-pryClr disabled:cursor-not-allowed disabled:opacity-25 w-10 h-10 flex justify-center items-center hover:bg-pryClr/10 rounded-md duration-200 transition-all"
+                                                type="button"
+                                                title="Delete employee"
+                                                disabled={isLoading || isDeleting}
+                                                onClick={() => confirmDeletion(employee)}
+                                            >
+                                                <MdDelete size={18} />
                                             </button>
                                         </div>
                                     </td>
@@ -180,13 +268,35 @@ const BranchOverview: React.FC = () => {
                 </table>
             </div>
 
+            <ConfirmDialog
+                isOpen={Boolean(employeeToDelete)}
+                title={`Delete ${employeeToDelete?.full_name}?`}
+                message={`Are you sure you want to delete "${employeeToDelete?.full_name}"? This action cannot be undone.`}
+                confirmText="Yes, Delete"
+                cancelText="Cancel"
+                onCancel={() => setEmployeeToDelete(null)}
+                onConfirm={handleDeleteEmployee}
+                isLoading={isDeleting}
+            />
+
+            <EditEmployee
+                isOpen={Boolean(selectedEmployee) && isEditing}
+                title={`Edit ${selectedEmployee?.full_name} Details`}
+                employee={selectedEmployee}
+                confirmText="Update Details"
+                onCancel={() => setSelectedEmployee(null)}
+                onConfirm={() => editAction()}
+            />
+                        
             <ViewEmployee
-                isOpen={Boolean(selectedEmployee)}
+                isOpen={Boolean(selectedEmployee) && isViewing}
                 title={`${selectedEmployee?.full_name} Details`}
                 employee={selectedEmployee}
                 onClose={() => setSelectedEmployee(null)}
-                onUpdate={() => {}}
-                showEditButton={false}
+                onUpdate={() => {
+                    setIsViewing(false);
+                    setIsEditing(true);
+                }}
             />
         </div>
     )

@@ -217,7 +217,7 @@ const AddEmployee = () => {
       setLoadingCountries(true);
       try {
         const response = await axios.get(`${COUNTRY_URL}/api/countries`);
-        console.log("response", response)
+        // console.log("response", response)
         const resData: CountryApiResponse[] = response.data
 
         if (response.status !== 200) {
