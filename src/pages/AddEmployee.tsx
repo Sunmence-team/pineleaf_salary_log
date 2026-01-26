@@ -9,6 +9,7 @@ import {
 import type { bankProps } from "../store/sharedinterfaces";
 import api from "../utilities/api";
 import axios from "axios";
+import FormattedNumberInput from "../components/forms/FormattedNumberInput";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
 const COUNTRY_URL = import.meta.env.VITE_COUNTRY_BASE_URL;
@@ -691,15 +692,14 @@ const AddEmployee = () => {
             <label htmlFor="salary_amount" className="text-sm font-medium">
               Estimate Pay (₦)
             </label>
-            <input
-              type="number"
-              name="salary_amount"
-              id="salary_amount"
-              value={formik.values.salary_amount}
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
+            <FormattedNumberInput
               placeholder="Enter amount"
               className="w-full h-[45px] text-sm indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
+              value={formik.values.salary_amount}
+              onChange={(value) => formik.setFieldValue("salary_amount", value)}
+              onBlur={formik.handleBlur}
+              name="salary_amount"
+              id="salary_amount"
             />
             {formik.touched.salary_amount && formik.errors.salary_amount && (
               <p className="text-sm text-red-600">

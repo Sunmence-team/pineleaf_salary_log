@@ -71,3 +71,25 @@ export function formatUnderScores(input: string, capitalize = false) {
 
   return formatted;
 }
+
+/**
+ * Formats a number with thousands separators.
+ * @param value - The number or string to format.
+ * @returns A formatted string (e.g., "1,000,000").
+ */
+export const formatNumberWithCommas = (value: number | string): string => {
+  const num = Number(value);
+  if (isNaN(num)) {
+    return "";
+  }
+  return new Intl.NumberFormat('en-US').format(num);
+};
+
+/**
+ * Removes all non-digit characters from a string.
+ * @param value - The string to unformat.
+ * @returns A string containing only digits.
+ */
+export const unformatNumber = (value: string): string => {
+  return value.replace(/\D/g, '');
+};
