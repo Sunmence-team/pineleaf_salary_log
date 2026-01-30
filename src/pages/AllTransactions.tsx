@@ -255,7 +255,7 @@ const AllTransactions: React.FC<AllCotransactionsProps> = ({ isRecent }) => {
                     <div className="flex items-stretch flex-col lg:flex-row gap-4">
                       <Link
                         className="bg-pryClr text-white rounded-lg h-[45px] px-4 text-sm cursor-pointer font-semibold flex items-center justify-center"
-                        to={`/managepayments/failed/${formatMonthYear(t.month)}`}
+                        to={`/managepayments/failed?month${formatMonthYear(t.month)}`}
                       >
                         View Failed transactions
                       </Link>

@@ -46,7 +46,7 @@ function App() {
           }
         />
         <Route
-          path={"/managepayments/failed/:month"}
+          path={"/managepayments/failed"}
           element={
             <MainLayout
               pageName="Manage Failed Payments"

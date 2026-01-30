@@ -12,7 +12,6 @@ import {
   formatterUtility,
 } from "../utilities/FormatterUtility";
 import { CgSpinner } from "react-icons/cg";
-import { useParams } from "react-router-dom";
 import { TbUsersMinus, TbUsersPlus } from "react-icons/tb";
 import ConfirmDialog from "../components/modal/ConfirmDialog";
 import VerificationCodeDialog from "../components/modal/VerificationCodeDialog";
@@ -20,7 +19,9 @@ import { RiUserAddLine, RiUserMinusLine } from "react-icons/ri";
 
 const FailedPayment: React.FC = () => {
   const { token } = useUser();
-  const { month } = useParams<{ month: string }>();
+  const search = window.location.search;
+  const params = new URLSearchParams(search);
+  const month = params.get("month") || "";
   console.log("month param:", month);
   const [transaction, setTransaction] = useState<groupTransactionProps | null>(null);
   const [isLoading, setIsLoading] = useState(true);
