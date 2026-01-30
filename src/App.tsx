@@ -8,6 +8,7 @@ import AllEmployees from "./pages/AllEmployees";
 import ManagePayments from "./pages/ManagePayments";
 import AllTransactions from "./pages/AllTransactions";
 import BranchOverview from "./pages/BranchOverview";
+import FailedPayment from "./pages/FailedPayment";
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
       <Toaster />
       <Routes>
         <Route path={"/"} element={<Login />} />
+        <Route path={"/login"} element={<Login />} />
         <Route
           path={"/overview"}
           element={<MainLayout pageName="Overview" children={<Dashboard />} />}
@@ -40,6 +42,15 @@ function App() {
             <MainLayout
               pageName="Manage Payments"
               children={<ManagePayments />}
+            />
+          }
+        />
+        <Route
+          path={"/managepayments/failed/:month"}
+          element={
+            <MainLayout
+              pageName="Manage Failed Payments"
+              children={<FailedPayment />}
             />
           }
         />

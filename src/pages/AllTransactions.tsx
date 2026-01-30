@@ -9,9 +9,11 @@ import { useUser } from "../context/UserContext";
 import PaginationControls from "../utilities/PaginationControls";
 import {
   formatISODateToCustom,
+  formatMonthYear,
   formatterUtility,
 } from "../utilities/FormatterUtility";
 import { CgSpinner } from "react-icons/cg";
+import { Link } from "react-router-dom";
 interface AllCotransactionsProps {
   isRecent: boolean;
 }
@@ -251,6 +253,12 @@ const AllTransactions: React.FC<AllCotransactionsProps> = ({ isRecent }) => {
                       </h4>
                     </div>
                     <div className="flex items-stretch flex-col lg:flex-row gap-4">
+                      <Link
+                        className="bg-pryClr text-white rounded-lg h-[45px] px-4 text-sm cursor-pointer font-semibold flex items-center justify-center"
+                        to={`/managepayments/failed/${formatMonthYear(t.month)}`}
+                      >
+                        View Failed transactions
+                      </Link>
                       <button
                         className="bg-pryClr text-white rounded-lg h-[45px] px-4 text-sm cursor-pointer font-semibold"
                         onClick={() =>

@@ -93,3 +93,13 @@ export const formatNumberWithCommas = (value: number | string): string => {
 export const unformatNumber = (value: string): string => {
   return value.replace(/\D/g, '');
 };
+
+export function formatMonthYear(dateString: string): string {
+  const date = new Date(dateString);
+  
+  // getMonth() is zero-indexed (0-11), so we add 1
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  
+  return `${year}-${month}`;
+}
