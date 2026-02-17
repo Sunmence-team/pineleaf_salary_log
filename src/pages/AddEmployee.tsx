@@ -10,6 +10,7 @@ import type { bankProps } from "../store/sharedinterfaces";
 import api from "../utilities/api";
 import axios from "axios";
 import FormattedNumberInput from "../components/forms/FormattedNumberInput";
+import { formatDateToYYYYMMDD } from "../utilities/FormatterUtility";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
 const COUNTRY_URL = import.meta.env.VITE_COUNTRY_BASE_URL;
@@ -18,7 +19,7 @@ interface CountryApiResponse {
   name: string;
   id: number;
   iso2: string;
-};
+}
 
 interface StateItem {
   name: string;
@@ -36,21 +37,22 @@ const AddEmployee = () => {
   const [loadingStates, setLoadingStates] = useState(false);
   const [countryIdMap, setCountryIdMap] = useState<Record<string, number>>({});
   const branches = [
-    'HQ - Onitsha',
-    'Mgbuka',
-    'Awka',
-    'Asaba',
-    'Owerri',
-    'Port Harcourt',
-    'Lagos Ajah',
-    'Lagos Apapa',
-    'Enugwu-Ukwu',
-    'Abuja',
-    'Abia',
-    'Nnewi',
-    'Enugu',
-    'Amuwo odofin Lagos',
-  ]
+    "HQ - Onitsha",
+    "Mgbuka",
+    "Awka",
+    "Asaba",
+    "Owerri",
+    "Port Harcourt",
+    "Lagos Ajah",
+    "Lagos Apapa",
+    "Enugwu-Ukwu",
+    "Abuja",
+    "Abia",
+    "Nnewi",
+    "Enugu",
+    "Amuwo odofin Lagos",
+    "Ebonyi",
+  ];
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -60,7 +62,7 @@ const AddEmployee = () => {
         const fetchedBanks = await fetchPaystackBanks();
         setBanks(fetchedBanks);
       } catch (error) {
-        console.log("Error fetching banks: ", error)
+        console.log("Error fetching banks: ", error);
         toast.error("Failed to load banks.");
       } finally {
         setIsLoadingBanks(false);
@@ -141,7 +143,7 @@ const AddEmployee = () => {
 
         if (response.status === 200 || response.status === 201) {
           toast.success(
-            response.data.message || "Employee added successfully!"
+            response.data.message || "Employee added successfully!",
           );
           resetForm();
           setSelectedBankCode(""); // Reset bank code too
@@ -149,7 +151,7 @@ const AddEmployee = () => {
       } catch (error: any) {
         console.error("Creation failed!", error);
         toast.error(
-          error?.response?.data?.message || "Error creating employee"
+          error?.response?.data?.message || "Error creating employee",
         );
       } finally {
         setSubmitting(false);
@@ -177,7 +179,7 @@ const AddEmployee = () => {
         try {
           const resolvedData = await resolveAccountNumber(
             accountNumber,
-            selectedBankCode
+            selectedBankCode,
           );
 
           if (resolvedData && resolvedData.account_name) {
@@ -186,7 +188,7 @@ const AddEmployee = () => {
           } else {
             setFieldValue("account_name", "");
             toast.error(
-              "Could not resolve account name. Please check details."
+              "Could not resolve account name. Please check details.",
             );
           }
         } catch (error) {
@@ -219,27 +221,27 @@ const AddEmployee = () => {
       try {
         const response = await axios.get(`${COUNTRY_URL}/api/countries`);
         // console.log("response", response)
-        const resData: CountryApiResponse[] = response.data
+        const resData: CountryApiResponse[] = response.data;
 
         if (response.status !== 200) {
           throw new Error(`Request failed with status ${response.status}`);
         }
 
         if (!resData || resData.length === 0) {
-          throw new Error('No countries found');
+          throw new Error("No countries found");
         }
 
         const countryList = resData
-          .map(c => ({ name: c.name, id: c.id, iso2: c.iso2 }))
+          .map((c) => ({ name: c.name, id: c.id, iso2: c.iso2 }))
           .sort((a, b) => a.name.localeCompare(b.name));
 
         const idMap: Record<string, number> = {};
 
-        resData.forEach(c => {
+        resData.forEach((c) => {
           idMap[c.name] = c.id;
         });
 
-        setCountries(countryList.map(c => c.name));
+        setCountries(countryList.map((c) => c.name));
         setCountryIdMap(idMap);
 
         setCountries(countryList.map((c) => c.name));
@@ -259,8 +261,8 @@ const AddEmployee = () => {
         const countryId = countryIdMap[formik.values.country];
         try {
           const response = await fetch(
-          `${COUNTRY_URL}/api/countries/${countryId}/states`
-        );
+            `${COUNTRY_URL}/api/countries/${countryId}/states`,
+          );
           const result = await response.json();
           if (result.error) throw new Error(result.msg);
 
@@ -268,7 +270,7 @@ const AddEmployee = () => {
           setStates(stateList.sort());
           formik.setFieldValue("state", "");
         } catch (error) {
-          console.error("Error fetching states: ", error)
+          console.error("Error fetching states: ", error);
           setStates([]);
           formik.setFieldValue("state", "");
         } finally {
@@ -403,6 +405,7 @@ const AddEmployee = () => {
               type="date"
               name="dob"
               id="dob"
+              max={formatDateToYYYYMMDD(new Date())}
               value={formik.values.dob}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
@@ -543,7 +546,7 @@ const AddEmployee = () => {
               disabled={branches.length === 0}
               className="w-full h-[45px] text-sm indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr disabled:bg-gray-100 disabled:cursor-not-allowed"
             >
-               <option disabled value="">
+              <option disabled value="">
                 Pick Branch
               </option>
               {branches.map((branch) => (
@@ -553,7 +556,9 @@ const AddEmployee = () => {
               ))}
             </select>
             {formik.touched.company_branch && formik.errors.company_branch && (
-              <p className="text-sm text-red-600">{formik.errors.company_branch}</p>
+              <p className="text-sm text-red-600">
+                {formik.errors.company_branch}
+              </p>
             )}
           </div>
 
@@ -591,6 +596,7 @@ const AddEmployee = () => {
               type="date"
               name="employmentDate"
               id="employmentDate"
+              max={formatDateToYYYYMMDD(new Date())}
               value={formik.values.employmentDate}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}

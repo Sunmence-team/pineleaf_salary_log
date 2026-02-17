@@ -30,6 +30,7 @@ const branches = [
   'Nnewi',
   'Enugu',
   'Amuwo odofin Lagos',
+  'Ebonyi',
 ]
 
 const ManagePayments: React.FC = () => {

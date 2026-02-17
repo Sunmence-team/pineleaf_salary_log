@@ -387,6 +387,7 @@ const AllEmployees = () => {
         onConfirm={handleDeleteemployee}
         isLoading={isDeleting}
       />
+
       <EditEmployee
         isOpen={showEditModal}
         title={`Edit ${selectedemployee?.full_name} Details`}
@@ -395,6 +396,7 @@ const AllEmployees = () => {
         onCancel={() => setShowEditModal(false)}
         onConfirm={() => editAction()}
       />
+      
       <ViewEmployee
         isOpen={showViewModal}
         title={`${selectedemployee?.full_name} Details`}
