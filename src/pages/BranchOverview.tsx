@@ -24,6 +24,7 @@ const branches = [
     'Nnewi',
     'Enugu',
     'Amuwo odofin Lagos',
+    'Ebonyi',
 ]
 
 const BranchOverview: React.FC = () => {
