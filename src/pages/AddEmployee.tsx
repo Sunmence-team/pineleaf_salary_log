@@ -52,6 +52,7 @@ const AddEmployee = () => {
     "Enugu",
     "Amuwo odofin Lagos",
     "Ebonyi",
+    "Nkpor"
   ];
 
   useEffect(() => {
