@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import type { bankProps, employeeProps } from "../../store/sharedinterfaces";
 import Modal from "./Modal";
+import FormattedNumberInput from "../forms/FormattedNumberInput";
 import { toast } from "sonner";
 import {
   fetchPaystackBanks,
@@ -122,24 +123,27 @@ const EditEmployee = ({
     fetchCountries();
   }, []);
 
-  const initialValues = employee ?? {
-    full_name: "",
-    email: "",
-    phone: "",
-    address: "",
-    state: "",
-    country: "",
-    gender: "",
-    dob: "",
-    jobTitle: "",
-    company_branch: "",
-    department: "",
-    bank_name: "",
-    account_number: "",
-    account_name: "",
-    employmentType: "",
-    employmentDate: "",
-    salary_amount: "",
+  const initialValues = {
+    full_name: employee?.full_name || "",
+    email: employee?.email || "",
+    phone: employee?.phone || "",
+    address: employee?.address || "",
+    state: employee?.state || "",
+    country: employee?.country || "",
+    gender: employee?.gender || "",
+    dob: employee?.dob || "",
+    jobTitle: employee?.jobTitle || "",
+    company_branch: employee?.company_branch || "",
+    department: employee?.department || "",
+    bank_name: employee?.bank_name || "",
+    account_number: employee?.account_number || "",
+    account_name: employee?.account_name || "",
+    employmentType: employee?.employmentType || "",
+    employmentDate: employee?.employmentDate || "",
+    salary_amount: employee?.salary_amount || "",
+    sub_charge: employee?.sub_charge || "",
+    sub_charge_reason: employee?.sub_charge_reason || "",
+    sub_charge_months: employee?.sub_charge_months || "",
   };
 
   const formik = useFormik<any>({
@@ -167,14 +171,42 @@ const EditEmployee = ({
       country: Yup.string().required("Country is required"),
       state: Yup.string().required("State is required"),
       address: Yup.string().required("Adress is required"),
+      sub_charge: Yup.number()
+        .transform((value, originalValue) => (originalValue === "" ? null : value))
+        .min(0, "Sub charge cannot be negative")
+        .nullable(),
+      sub_charge_months: Yup.number()
+        .transform((value, originalValue) => (originalValue === "" ? null : value))
+        .integer("Duration must be an integer")
+        .min(1, "Duration must be at least 1 month")
+        .nullable(),
+      sub_charge_reason: Yup.string().nullable(),
     }),
     onSubmit: async (values, { resetForm }) => {
       console.log("employee create values: ", values);
 
       try {
+        const payload = { ...values };
+        
+        if (payload.sub_charge === "" || payload.sub_charge === null) {
+          delete payload.sub_charge;
+        } else {
+          payload.sub_charge = Number(payload.sub_charge);
+        }
+
+        if (payload.sub_charge_months === "" || payload.sub_charge_months === null) {
+          delete payload.sub_charge_months;
+        } else {
+          payload.sub_charge_months = Number(payload.sub_charge_months);
+        }
+
+        if (payload.sub_charge_reason === "" || payload.sub_charge_reason === null) {
+          delete payload.sub_charge_reason;
+        }
+
         const response = await api.put(
           `/edit_employers/${employee?.id}`,
-          values,
+          payload,
           {
             headers: {
               "Content-Type": "application/json",
@@ -704,18 +736,84 @@ const EditEmployee = ({
             <label htmlFor="salary_amount" className="text-xs font-medium">
               Estimate Pay
             </label>
-            <input
-              type="number"
+            <FormattedNumberInput
               name="salary_amount"
               id="salary_amount"
               value={formik.values.salary_amount}
-              onChange={formik.handleChange}
+              onChange={(value) => formik.setFieldValue("salary_amount", value)}
               onBlur={formik.handleBlur}
               className="md:text-sm text-xs py-2 indent-3 border border-gray-300 rounded-md bg-transparent focus:outline-none focus:border-pryClr"
             />
             {formik.errors.salary_amount && formik.touched.salary_amount && (
               <p className="text-xs text-red-600">
                 {formik.errors.salary_amount as string}
+              </p>
+            )}
+          </div>
+
+          {/* Deductions Section */}
+          <div className="md:col-span-2 border-t border-gray-200 pt-4 mt-2">
+            <h4 className="text-sm font-semibold text-gray-700">Deductions (Optional)</h4>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label htmlFor="sub_charge" className="text-xs font-medium">
+              Sub Charge (Deduction Amount)
+            </label>
+            <FormattedNumberInput
+              name="sub_charge"
+              id="sub_charge"
+              value={formik.values.sub_charge}
+              onChange={(value) => formik.setFieldValue("sub_charge", value)}
+              onBlur={formik.handleBlur}
+              placeholder="e.g. 10000"
+              className="md:text-sm text-xs py-2 indent-3 border border-gray-300 rounded-md bg-transparent focus:outline-none focus:border-pryClr"
+            />
+            {formik.errors.sub_charge && formik.touched.sub_charge && (
+              <p className="text-xs text-red-600">
+                {formik.errors.sub_charge as string}
+              </p>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label htmlFor="sub_charge_months" className="text-xs font-medium">
+              Deduction Duration (Months)
+            </label>
+            <input
+              type="number"
+              name="sub_charge_months"
+              id="sub_charge_months"
+              value={formik.values.sub_charge_months}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              placeholder="e.g. 1"
+              className="md:text-sm text-xs py-2 indent-3 border border-gray-300 rounded-md bg-transparent focus:outline-none focus:border-pryClr"
+            />
+            {formik.errors.sub_charge_months && formik.touched.sub_charge_months && (
+              <p className="text-xs text-red-600">
+                {formik.errors.sub_charge_months as string}
+              </p>
+            )}
+          </div>
+
+          <div className="md:col-span-2 flex flex-col gap-2">
+            <label htmlFor="sub_charge_reason" className="text-xs font-medium">
+              Deduction Reason
+            </label>
+            <input
+              type="text"
+              name="sub_charge_reason"
+              id="sub_charge_reason"
+              value={formik.values.sub_charge_reason}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              placeholder="e.g. Late coming penalty"
+              className="md:text-sm text-xs py-2 indent-3 border border-gray-300 rounded-md bg-transparent focus:outline-none focus:border-pryClr"
+            />
+            {formik.errors.sub_charge_reason && formik.touched.sub_charge_reason && (
+              <p className="text-xs text-red-600">
+                {formik.errors.sub_charge_reason as string}
               </p>
             )}
           </div>

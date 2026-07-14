@@ -293,7 +293,12 @@ const ManagePayments: React.FC = () => {
               placeholder="Search employees..."
               className="w-full h-full border-0 focus:outline-none placeholder:text-black/50"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                if (currentPageFromApi !== 1) {
+                  setCurrentPageFromApi(1)
+                }
+                setSearchQuery(e.target.value)
+              }}
             />
             <FiSearch
               className="text-gray-400"

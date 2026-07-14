@@ -13,7 +13,9 @@ export interface employeeProps {
   employmentType: string;
   jobTitle: string;
   department: string;
+  country: string;
   state: string;
+  address: string;
   company_branch: string;
   salary_amount: string;
   created_at: string;
@@ -24,6 +26,9 @@ export interface employeeProps {
   recipient_code: string | null;
   account_name: string;
   paying: number;
+  sub_charge?: number;
+  sub_charge_reason?: string;
+  sub_charge_months?: number;
 }
 
 export interface transactionsProps {
