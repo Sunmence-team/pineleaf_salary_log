@@ -1,11 +1,9 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import type {
   employeeProps,
-  groupTransactionProps,
+  transactionsProps,
 } from "../store/sharedinterfaces";
 import { toast } from "sonner";
-import api from "../utilities/api";
-import { useUser } from "../hooks/UseUserContext";
 import PaginationControls from "../utilities/PaginationControls";
 import {
   formatISODateToCustom,
@@ -16,24 +14,21 @@ import { TbUsersMinus, TbUsersPlus } from "react-icons/tb";
 import ConfirmDialog from "../components/modal/ConfirmDialog";
 import VerificationCodeDialog from "../components/modal/VerificationCodeDialog";
 import { RiUserAddLine, RiUserMinusLine } from "react-icons/ri";
+import {
+  useFailedPaymentsQuery,
+  useUpdatePayingStatusMutation,
+  useTriggerPayrollMutation,
+} from "../hooks/useApiQueries";
+import { getErrorMessage } from "../utilities/api";
 
 const FailedPayment: React.FC = () => {
-  const { token } = useUser();
   const search = window.location.search;
   const params = new URLSearchParams(search);
   const month = params.get("month") || "";
   console.log("month param:", month);
-  const [transaction, setTransaction] = useState<groupTransactionProps | null>(
-    null,
-  );
-  const [isLoading, setIsLoading] = useState(true);
-  const [currentPageFromApi, setCurrentPageFromApi] = useState(1);
-  const [totalApiPages, setTotalApiPages] = useState(1);
 
+  const [currentPageFromApi, setCurrentPageFromApi] = useState(1);
   const [userIdsToBeActedOn, setuserIdsToBeActedOn] = useState<number[]>([]);
-  const [updatingStatus, setUpdatingStatus] = useState(false);
-  const [isProcessingPayment, setIsProcessingPayment] =
-    useState<boolean>(false);
 
   const [showConfirmModal, setShowConfirmModal] = useState<boolean>(false);
   const [showUpdateConfirmModal, setShowUpdateConfirmModal] =
@@ -45,54 +40,24 @@ const FailedPayment: React.FC = () => {
 
   const apiItemsPerPage = 10;
 
-  const fetchTransaction = useCallback(async () => {
-    setIsLoading(true);
-    // setError(null);
+  // React Query hooks
+  const { data, isLoading, error } = useFailedPaymentsQuery({
+    page: currentPageFromApi,
+    per_page: apiItemsPerPage,
+    month: month,
+  });
 
-    try {
-      const response = await api.get(
-        `/employeenotpaid?page=${currentPageFromApi}&per_page=${apiItemsPerPage}&month=${month}`,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
+  const updatePayingStatusMutation = useUpdatePayingStatusMutation();
+  const triggerPayrollMutation = useTriggerPayrollMutation();
 
-      console.log("response", response);
+  const transaction = useMemo(() => data?.[0] || null, [data]);
+  const totalApiPages = useMemo(() => data?.pagination?.last_page ?? 1, [data]);
 
-      if (response.status === 200 && response.data.success) {
-        setTransaction(response.data.data?.[0]);
-        console.log("response.data.data?.[0]", response.data.data?.[0]);
-        setCurrentPageFromApi(response.data.pagination.current_page);
-        setTotalApiPages(response.data.pagination.last_page);
-      } else {
-        toast.error(
-          `Failed to fetch transaction: ${
-            response.data.message || "Unknown error"
-          }`,
-        );
-      }
-    } catch (err: unknown) {
-      toast.error(getErrorMessage(err, "Something went wrong on the server."));
-      console.error("Unexpected error occurred. Please try again.", err);
-    } finally {
-      setIsLoading(false);
+  useEffect(() => {
+    if (error) {
+      toast.error(getErrorMessage(error, "Failed to load transaction data."));
     }
-  }, [token, currentPageFromApi, apiItemsPerPage]);
-
-  useEffect(() => {
-    const delayDebounce = setTimeout(() => {
-      fetchTransaction();
-    }, 500);
-
-    return () => clearTimeout(delayDebounce);
-  }, [fetchTransaction]);
-
-  useEffect(() => {
-    setCurrentPageFromApi(1);
-  }, []);
+  }, [error]);
 
   const convertToCSV = (data: Record<string, unknown>[]) => {
     if (!data.length) return "";
@@ -118,101 +83,63 @@ const FailedPayment: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
-  const handleCanPay = async (id: number) => {
-    setUpdatingStatus(true);
-    try {
-      const payload = {
-        ids: [id],
-        paying: selectedEmployee?.paying === 0 ? 1 : 0,
-      };
-
-      const response = await api.post("/employees/paying_all", payload);
-
-      if (response && response.status === 200) {
+  const handleCanPay = (id: number) => {
+    const payload = {
+      ids: [id],
+      paying: (selectedEmployee?.paying === 0 ? 1 : 0) as 0 | 1,
+    };
+    updatePayingStatusMutation.mutate(payload, {
+      onSuccess: () => {
         toast.success("Employee paying status updated successfully");
-        fetchTransaction();
-      }
-    } catch (err: unknown) {
-      toast.error(getErrorMessage(err, "Failed to update employee payment status"));
-      console.error("Error updating employee payment status", err);
-    } finally {
-      setUpdatingStatus(false);
-      setShowUpdateConfirmModal(false);
-    }
+      },
+      onSettled: () => {
+        setShowUpdateConfirmModal(false);
+      },
+    });
   };
 
-  const handleInitializeBulkPayment = async (code: string) => {
-    if (!token) {
-      toast.error("Not authenticated");
-      return;
-    }
-
+  const handleInitializeBulkPayment = (code: string) => {
     if (!transaction?.payments || transaction?.payments.length === 0) {
       toast.error("No employees to process payment for.");
       setShowConfirmModal(false);
       return;
     }
 
-    setIsProcessingPayment(true);
-
-    try {
-      const response = await api.post("/trigger-payroll", { code });
-
-      if (response.status === 200 || response.status === 201) {
+    triggerPayrollMutation.mutate(code, {
+      onSuccess: () => {
         toast.success("Payment initialized successfully.");
-        fetchTransaction();
-      } else {
-        toast.error(response.data?.message ?? "Failed to initialize payment.");
-      }
-    } catch (err: unknown) {
-      toast.error(getErrorMessage(err, "Server error during payment."));
-      console.error("Error initializing  payment:", err);
-    } finally {
-      setIsProcessingPayment(false);
-      setShowVerificationCodeDialog(false);
-    }
+      },
+      onSettled: () => {
+        setShowVerificationCodeDialog(false);
+      },
+    });
   };
 
   const openConfirm = () => setShowConfirmModal(true);
 
-  const handleBulkUpdate = useCallback(
-    async (paying: 0 | 1) => {
-      if (!userIdsToBeActedOn || userIdsToBeActedOn.length === 0) {
-        toast.info("No employees selected to update.");
-        return;
-      }
+  const handleBulkUpdate = (paying: 0 | 1) => {
+    if (!userIdsToBeActedOn || userIdsToBeActedOn.length === 0) {
+      toast.info("No employees selected to update.");
+      return;
+    }
 
-      setUpdatingStatus(true);
-      const loadingId = toast.loading("Processing request...");
-      try {
-        const payload = {
-          ids: userIdsToBeActedOn,
-          paying,
-        };
-
-        const response = await api.post("/employees/paying_all", payload);
-
-        if (response && response.status === 200) {
+    const loadingId = toast.loading("Processing request...");
+    updatePayingStatusMutation.mutate(
+      { ids: userIdsToBeActedOn, paying },
+      {
+        onSuccess: () => {
           toast.success(
             `Successfully updated ${userIdsToBeActedOn.length} employee(s).`,
             { id: loadingId },
           );
-          fetchTransaction();
           setuserIdsToBeActedOn([]);
-        } else {
-          toast.error(response.data?.message || "An error occurred.", {
-            id: loadingId,
-          });
-        }
-      } catch (err: unknown) {
-        console.error("Error during bulk update:", err);
-        toast.error(getErrorMessage(err, "An unexpected error occurred."), { id: loadingId });
-      } finally {
-        setUpdatingStatus(false);
-      }
-    },
-    [userIdsToBeActedOn, fetchTransaction],
-  );
+        },
+        onError: (err) => {
+          toast.error(getErrorMessage(err, "An unexpected error occurred."), { id: loadingId });
+        },
+      },
+    );
+  };
 
   const handlePinDialog = () => {
     setShowConfirmModal(false);
@@ -248,6 +175,7 @@ const FailedPayment: React.FC = () => {
     employeeIdsOnCurrentPage.every((id) => userIdsToBeActedOn.includes(id));
   const someSelectedOnPage =
     employeeIdsOnCurrentPage.some((id) => userIdsToBeActedOn.includes(id)) &&
+
     !allSelectedOnPage;
 
   return (
@@ -319,7 +247,7 @@ const FailedPayment: React.FC = () => {
                     disabled={
                       isLoading ||
                       transaction.payments.length === 0 ||
-                      isProcessingPayment
+                      triggerPayrollMutation.isPending
                     }
                     className="flex items-center gap-2 px-4 py-2 cursor-pointer rounded-lg bg-pryClr text-white hover:opacity-95 disabled:opacity-50 transition"
                     title="Initialize payment for all employees"
@@ -459,9 +387,9 @@ const FailedPayment: React.FC = () => {
           </p>
           <div className="flex gap-2">
             <button
-              className="w-full px-3 h-10 rounded-md cursor-pointer text-sm text-pryClr hover:bg-pryClr/10 hover:opacity-90"
+              className="w-full px-3 h-10 rounded-md cursor-pointer text-sm text-pryClr hover:bg-pryClr/10 hover:opacity-90 disabled:opacity-50"
               title="Include Selected"
-              disabled={updatingStatus}
+              disabled={updatePayingStatusMutation.isPending}
               onClick={() => {
                 handleBulkUpdate(1);
               }}
@@ -469,9 +397,9 @@ const FailedPayment: React.FC = () => {
               <TbUsersPlus size={18} />
             </button>
             <button
-              className="w-full px-3 h-10 rounded-md cursor-pointer text-sm text-red-600 hover:bg-red-600/10 hover:opacity-90"
+              className="w-full px-3 h-10 rounded-md cursor-pointer text-sm text-red-600 hover:bg-red-600/10 hover:opacity-90 disabled:opacity-50"
               title="Exclude Selected"
-              disabled={updatingStatus}
+              disabled={updatePayingStatusMutation.isPending}
               onClick={() => {
                 handleBulkUpdate(0);
               }}
@@ -513,17 +441,18 @@ const FailedPayment: React.FC = () => {
         onConfirm={() =>
           handleCanPay(selectedEmployee !== null ? +selectedEmployee.id : NaN)
         }
-        isLoading={updatingStatus}
+        isLoading={updatePayingStatusMutation.isPending}
       />
 
       <VerificationCodeDialog
         isOpen={showVerificationCodeDialog}
         onCancel={() => setShowVerificationCodeDialog(false)}
         onConfirm={handleInitializeBulkPayment}
-        isLoading={isProcessingPayment}
+        isLoading={triggerPayrollMutation.isPending}
       />
     </div>
   );
 };
 
 export default FailedPayment;
+

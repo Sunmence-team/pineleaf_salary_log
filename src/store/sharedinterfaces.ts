@@ -193,3 +193,29 @@ export interface UpdatePayingStatusPayload {
   paying: 0 | 1;
 }
 
+export interface FetchTransactionsParams {
+  page?: number;
+  per_page?: number;
+  month?: string;
+}
+
+export interface FetchFailedPaymentsParams {
+  page?: number;
+  per_page?: number;
+  month?: string;
+}
+
+export interface Payment {
+  id: number;
+  amount: string;
+  status: "paid" | "pending" | "failed";
+  created_at: string;
+  employer_details: employeeProps;
+}
+
+export interface PayrollResponse {
+  month: string;
+  count: number;
+  total_amount: number;
+  payments: Payment[];
+}

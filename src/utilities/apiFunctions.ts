@@ -5,6 +5,9 @@ import type {
   FetchEmployeesParams,
   UpdateEmployeePayload,
   UpdatePayingStatusPayload,
+  FetchTransactionsParams,
+  FetchFailedPaymentsParams,
+  PayrollResponse,
 } from "../store/sharedinterfaces";
 
 const COUNTRY_URL = import.meta.env.VITE_COUNTRY_BASE_URL;
@@ -13,6 +16,7 @@ export const Login = async (values: { username: string; password: string }) => {
   const res = await api.post("/login", values);
   return res.data;
 };
+
 
 export const refreshUser = async () => {
   const res = await api.get("/me");
@@ -78,3 +82,28 @@ export const triggerPayroll = async (code: string) => {
   const res = await api.post("/trigger-payroll", { code });
   return res.data;
 };
+
+export const fetchTransactions = async ({
+  page = 1,
+  per_page = 5,
+  month = "",
+}: FetchTransactionsParams = {}) => {
+  const url = month
+    ? `/payments?month=${month}&page=${page}&per_page=${per_page}`
+    : `/payments?page=${page}&per_page=${per_page}`;
+  const res = await api.get(url);
+  return res.data;
+};
+
+export const fetchFailedPayments = async ({
+  page = 1,
+  per_page = 5,
+  month = "",
+}: FetchFailedPaymentsParams = {}) : Promise<PayrollResponse[]> => {
+  const res = await api.get(
+    `/employeenotpaid?page=${page}&per_page=${per_page}&month=${month}`,
+  );
+  return res.data;
+};
+
+

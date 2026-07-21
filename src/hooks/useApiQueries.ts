@@ -11,6 +11,8 @@ import {
   fetchBranchesOverview,
   updatePayingStatus,
   triggerPayroll,
+  fetchTransactions,
+  fetchFailedPayments,
 } from "../utilities/apiFunctions";
 import {
   fetchPaystackBanks,
@@ -20,10 +22,13 @@ import { toast } from "sonner";
 import type {
   FetchEmployeesParams,
   userMetrics,
+  FetchTransactionsParams,
+  FetchFailedPaymentsParams,
 } from "../store/sharedinterfaces";
 import { useNavigate } from "react-router-dom";
 import { getErrorMessage } from "../utilities/api";
 import { useUser } from "./UseUserContext";
+
 
 export const useLoginMutation = () => {
   const { login } = useUser();
@@ -179,6 +184,8 @@ export const useUpdatePayingStatusMutation = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["employees"] });
       queryClient.invalidateQueries({ queryKey: ["branches-overview"] });
+      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["failed-payments"] });
     },
     onError: (error) => {
       const errMsg = getErrorMessage(error, "An unexpected error occurred");
@@ -194,6 +201,8 @@ export const useTriggerPayrollMutation = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["employees"] });
       queryClient.invalidateQueries({ queryKey: ["branches-overview"] });
+      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["failed-payments"] });
     },
     onError: (error) => {
       const errMsg = getErrorMessage(error, "Failed to initialize payment");
@@ -201,3 +210,19 @@ export const useTriggerPayrollMutation = () => {
     },
   });
 };
+
+export const useTransactionsQuery = (params: FetchTransactionsParams) => {
+  return useQuery({
+    queryKey: ["transactions", params.month || "", params.page || 1, params.per_page || 5],
+    queryFn: () => fetchTransactions(params),
+  });
+};
+
+export const useFailedPaymentsQuery = (params: FetchFailedPaymentsParams) => {
+  return useQuery({
+    queryKey: ["failed-payments", params.month || "", params.page || 1, params.per_page || 5],
+    queryFn: () => fetchFailedPayments(params),
+  });
+};
+
+
