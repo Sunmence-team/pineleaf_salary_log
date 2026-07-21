@@ -7,7 +7,7 @@ import type {
   UpdatePayingStatusPayload,
   FetchTransactionsParams,
   FetchFailedPaymentsParams,
-  PayrollResponse,
+  FailedPaymentsResponse,
 } from "../store/sharedinterfaces";
 
 const COUNTRY_URL = import.meta.env.VITE_COUNTRY_BASE_URL;
@@ -99,7 +99,7 @@ export const fetchFailedPayments = async ({
   page = 1,
   per_page = 5,
   month = "",
-}: FetchFailedPaymentsParams = {}) : Promise<PayrollResponse[]> => {
+}: FetchFailedPaymentsParams = {}) : Promise<FailedPaymentsResponse> => {
   const res = await api.get(
     `/employeenotpaid?page=${page}&per_page=${per_page}&month=${month}`,
   );

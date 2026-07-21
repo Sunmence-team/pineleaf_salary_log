@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import type {
   employeeProps,
-  transactionsProps,
+  Payment,
 } from "../store/sharedinterfaces";
 import { toast } from "sonner";
 import PaginationControls from "../utilities/PaginationControls";
@@ -50,7 +50,7 @@ const FailedPayment: React.FC = () => {
   const updatePayingStatusMutation = useUpdatePayingStatusMutation();
   const triggerPayrollMutation = useTriggerPayrollMutation();
 
-  const transaction = useMemo(() => data?.[0] || null, [data]);
+  const transaction = useMemo(() => data?.data?.[0] || null, [data]);
   const totalApiPages = useMemo(() => data?.pagination?.last_page ?? 1, [data]);
 
   useEffect(() => {
@@ -149,7 +149,7 @@ const FailedPayment: React.FC = () => {
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { checked } = e.target;
     setuserIdsToBeActedOn((prevSelectedIds) => {
-      const currentEmployeeIds = transaction?.payments.map((emp) =>
+      const currentEmployeeIds = transaction?.payments.map((emp: Payment) =>
         Number(emp.employer_details.id),
       );
       if (checked) {
@@ -161,7 +161,7 @@ const FailedPayment: React.FC = () => {
       } else {
         // Remove all current page employee IDs from selected
         const remainingSelectedIds = prevSelectedIds.filter(
-          (id) => !currentEmployeeIds?.includes(id),
+          (id: number) => !currentEmployeeIds?.includes(id),
         );
         return remainingSelectedIds;
       }
@@ -169,14 +169,15 @@ const FailedPayment: React.FC = () => {
   };
 
   const employeeIdsOnCurrentPage =
-    transaction?.payments?.map((emp) => Number(emp.employer_details.id)) || [];
+    transaction?.payments?.map((emp: Payment) => Number(emp.employer_details.id)) || [];
   const allSelectedOnPage =
     employeeIdsOnCurrentPage.length > 0 &&
-    employeeIdsOnCurrentPage.every((id) => userIdsToBeActedOn.includes(id));
+    employeeIdsOnCurrentPage.every((id: number) => userIdsToBeActedOn.includes(id));
   const someSelectedOnPage =
-    employeeIdsOnCurrentPage.some((id) => userIdsToBeActedOn.includes(id)) &&
+    employeeIdsOnCurrentPage.some((id: number) => userIdsToBeActedOn.includes(id)) &&
 
     !allSelectedOnPage;
+
 
   return (
     <div className={`flex flex-col gap-8 px-4 lg:px-6`}>
@@ -222,7 +223,7 @@ const FailedPayment: React.FC = () => {
                       const loading = toast.loading("Exporting as CSV");
 
                       const formatted = transaction.payments.map(
-                        (item: transactionsProps) => ({
+                        (item: Payment) => ({
                           EmployeeName: item.employer_details?.full_name || "-",
                           Amount: item.amount,
                           Reference:
@@ -282,7 +283,7 @@ const FailedPayment: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {transaction.payments.map((t, idx) => (
+                  {transaction.payments.map((t: Payment, idx: number) => (
                     <tr
                       key={idx}
                       className={`${idx % 2 === 0 ? "bg-secClr/90" : "bg-[#FFF]"} h-[50px] border-y border-black/10`}

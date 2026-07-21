@@ -5,6 +5,7 @@ import type {
   StateItem,
   EditEmployeeProps,
   EditEmployeeFormValues,
+  employeeProps,
 } from "../../store/sharedinterfaces";
 import Modal from "./Modal";
 import FormattedNumberInput from "../forms/FormattedNumberInput";
@@ -147,26 +148,39 @@ const EditEmployee = ({
     }),
     onSubmit: (values, { resetForm }) => {
       if (!employee?.id) return;
-      const payload = { ...values };
+      
+      const updatePayload: Partial<employeeProps> & Record<string, unknown> = {
+        full_name: values.full_name,
+        email: values.email,
+        phone: values.phone,
+        address: values.address,
+        state: values.state,
+        country: values.country,
+        gender: values.gender,
+        dob: values.dob,
+        jobTitle: values.jobTitle,
+        company_branch: values.company_branch,
+        department: values.department,
+        bank_name: values.bank_name,
+        account_number: values.account_number,
+        account_name: values.account_name,
+        employmentType: values.employmentType,
+        employmentDate: values.employmentDate,
+        salary_amount: values.salary_amount,
+      };
 
-      if (payload.sub_charge === "" || payload.sub_charge === null) {
-        delete payload.sub_charge;
-      } else {
-        payload.sub_charge = Number(payload.sub_charge);
+      if (values.sub_charge !== "" && values.sub_charge !== null && values.sub_charge !== undefined) {
+        updatePayload.sub_charge = Number(values.sub_charge);
       }
-
-      if (payload.sub_charge_months === "" || payload.sub_charge_months === null) {
-        delete payload.sub_charge_months;
-      } else {
-        payload.sub_charge_months = Number(payload.sub_charge_months);
+      if (values.sub_charge_months !== "" && values.sub_charge_months !== null && values.sub_charge_months !== undefined) {
+        updatePayload.sub_charge_months = Number(values.sub_charge_months);
       }
-
-      if (payload.sub_charge_reason === "" || payload.sub_charge_reason === null) {
-        delete payload.sub_charge_reason;
+      if (values.sub_charge_reason !== "" && values.sub_charge_reason !== null && values.sub_charge_reason !== undefined) {
+        updatePayload.sub_charge_reason = values.sub_charge_reason;
       }
 
       updateEmployeeMutation.mutate(
-        { id: employee.id, payload },
+        { id: employee.id, payload: updatePayload },
         {
           onSuccess: () => {
             resetForm();
@@ -617,7 +631,7 @@ const EditEmployee = ({
             <FormattedNumberInput
               name="sub_charge"
               id="sub_charge"
-              value={formik.values.sub_charge}
+              value={formik.values.sub_charge ?? ""}
               onChange={(value) => formik.setFieldValue("sub_charge", value)}
               onBlur={formik.handleBlur}
               placeholder="e.g. 10000"

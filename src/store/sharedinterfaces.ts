@@ -143,10 +143,11 @@ export interface EditEmployeeFormValues {
   employmentType: string;
   employmentDate: string;
   salary_amount: string;
-  sub_charge: string | number;
-  sub_charge_reason: string;
-  sub_charge_months: string | number;
+  sub_charge?: string | number;
+  sub_charge_reason?: string;
+  sub_charge_months?: string | number;
 }
+
 
 export interface CountryApiResponse {
   name: string;
@@ -219,3 +220,13 @@ export interface PayrollResponse {
   total_amount: number;
   payments: Payment[];
 }
+
+export interface FailedPaymentsResponse {
+  success: boolean;
+  data: PayrollResponse[];
+  pagination: {
+    current_page: number;
+    last_page: number;
+    total: number;
+  };
+}
