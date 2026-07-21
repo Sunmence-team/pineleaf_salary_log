@@ -25,7 +25,7 @@ export const UserProvider = ({ children }: userProviderProps) => {
     });
 
     
-  const { data: refreshedUser, error } = useRefreshUserQuery();
+  const { data: refreshedUser, error } = useRefreshUserQuery(token);
 
   const refreshUser = useCallback(async () => {
     if (error) {
