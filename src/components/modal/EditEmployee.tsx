@@ -10,8 +10,8 @@ import {
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import api from "../../utilities/api";
-import { useUser } from "../../context/UserContext";
 import axios from "axios";
+import { useUser } from "../../hooks/UseUserContext";
 
 const COUNTRY_URL = import.meta.env.VITE_COUNTRY_BASE_URL;
 
@@ -53,7 +53,6 @@ const EditEmployee = ({
   onCancel,
   onConfirm,
 }: EditEmployeeProps) => {
-  if (!isOpen) return null;
 
   const [banks, setBanks] = useState<bankProps[]>([]);
   const [isLoadingBanks, setIsLoadingBanks] = useState(true);
@@ -373,6 +372,9 @@ const EditEmployee = ({
       setSelectedBankCode("");
     }
   };
+
+    if (!isOpen) return null;
+
 
   return (
     <Modal onClose={onCancel}>

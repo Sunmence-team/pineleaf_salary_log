@@ -9,9 +9,9 @@ import {
 import { Link } from "react-router-dom";
 import { GoArrowUpRight } from "react-icons/go";
 import AllTransactions from "./AllTransactions";
-import { useUser } from "../context/UserContext";
 import { useEffect } from "react";
 import { formatterUtility } from "../utilities/FormatterUtility";
+import { useUser } from "../hooks/UseUserContext";
 
 export interface employeeProps {
   salary_amount: string;

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import PaginationControls from "../utilities/PaginationControls";
 import { toast } from "sonner";
-import { useUser } from "../context/UserContext";
+import { useUser } from "../hooks/UseUserContext";
 import api from "../utilities/api";
 import type { employeeProps } from "../store/sharedinterfaces";
 import ConfirmDialog from "../components/modal/ConfirmDialog";

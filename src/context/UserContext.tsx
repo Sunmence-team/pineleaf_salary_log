@@ -1,73 +1,92 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import api, { setupInterceptors } from "../utilities/api";
-
-interface userProviderProps {
-  children: React.ReactNode;
-}
-
-interface userProps {
-  role: string;
-}
-
-interface dashboardMetricsProps {
-  total_employees: number;
-  total_salary_paid: number;
-  no_CompletedPayments:number;
-  total_estimated_salary:number
-}
-
-interface UserContextType {
-  user: userProps | null;
-  token: string | null;
-  role: string | null;
-  setToken: React.Dispatch<React.SetStateAction<string | null>>;
-  setUser: React.Dispatch<React.SetStateAction<userProps | null>>;
-  login: (token: string, user: userProps, metrics: dashboardMetricsProps) => void;
-  logout: () => void;
-  isLoggedIn: boolean;
-  refreshUser: (token: string) => Promise<void>;
-  isLoading: boolean;
-  dashboardMetrics: dashboardMetricsProps;
-}
-
-const UserContext = createContext<UserContextType | undefined>(undefined);
+import { getErrorMessage, setupInterceptors } from "../utilities/api";
+import type {
+  dashboardMetricsProps,
+  userProps,
+  userProviderProps,
+} from "../store/sharedinterfaces";
+import { UserContext } from "../hooks/UseUserContext";
+import { useRefreshUserQuery } from "../hooks/useApiQueries";
 
 export const UserProvider = ({ children }: userProviderProps) => {
   const [user, setUser] = useState<userProps | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [role, setRole] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(true);
 
   const [dashboardMetrics, setDashboardMetrics] =
     useState<dashboardMetricsProps>({
       total_employees: 0,
       total_salary_paid: 0,
-      no_CompletedPayments:0,
-      total_estimated_salary:0
+      no_CompletedPayments: 0,
+      total_estimated_salary: 0,
     });
 
-  useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    const storedToken = localStorage.getItem("token");
-    const storedMetrics = localStorage.getItem("dashboardMetrics");
-    // console.log("storedToken", storedToken)
-    if (storedToken && storedUser) {
-      const parsedUser = JSON.parse(storedUser);
-      setToken(storedToken);
-      setUser(parsedUser);
-      setRole(parsedUser?.role || null);
+    
+  const { data: refreshedUser, error } = useRefreshUserQuery();
+
+  const refreshUser = useCallback(async () => {
+    if (error) {
+      const errMsg = getErrorMessage(error, "Failed to refresh user");
+      toast.error(errMsg);
+      return;
     }
 
-    if (storedMetrics) {
-      setDashboardMetrics(JSON.parse(storedMetrics));
-    }
-  }, []);
+    setDashboardMetrics({
+      total_employees: refreshedUser?.total_employees,
+      total_salary_paid: refreshedUser?.total_salary_paid,
+      no_CompletedPayments: refreshedUser?.no_completed_payments,
+      total_estimated_salary: refreshedUser?.total_estimated_salary,
+    });
+    localStorage.setItem(
+      "dashboardMetrics",
+      JSON.stringify({
+        total_employees: refreshedUser?.total_employees,
+        total_salary_paid: refreshedUser?.total_salary_paid,
+        no_CompletedPayments: refreshedUser?.no_completed_payments,
+        total_estimated_salary: refreshedUser?.total_estimated_salary,
+      }),
+    );
+  }, [error, refreshedUser]);
+
+
+  useEffect(() => {
+    const initAuth = async () => {
+      setIsLoading(true);
+      try {
+        const storedUser = localStorage.getItem("user");
+        const storedToken = localStorage.getItem("token");
+        const storedMetrics = localStorage.getItem("dashboardMetrics");
+
+        if (!storedToken || !storedUser || !storedMetrics) {
+          setIsLoading(false);
+          return;
+        }
+
+        const parsedUser = JSON.parse(storedUser);
+        setToken(storedToken);
+        setUser(parsedUser);
+        setRole(parsedUser?.role || null);
+        setDashboardMetrics(JSON.parse(storedMetrics));
+        refreshUser();
+        setIsLoggedIn(true);
+      } catch (error) {
+        console.error("Session error details:", error);
+        logout();
+        setIsLoggedIn(false);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    initAuth();
+  }, [refreshUser]);
 
   const login = (
     token: string,
     user: userProps,
-    metrics: dashboardMetricsProps
+    metrics: dashboardMetricsProps,
   ) => {
     localStorage.setItem("token", token);
     localStorage.setItem("user", JSON.stringify(user));
@@ -81,14 +100,13 @@ export const UserProvider = ({ children }: userProviderProps) => {
     }
   };
 
-  const isLoggedIn = !!token;
 
   const logout = () => {
     localStorage.removeItem("token");
     setToken(null);
     localStorage.removeItem("user");
     setUser(null);
-     localStorage.removeItem("dashboardMetrics"); // Clear metrics on logout
+    localStorage.removeItem("dashboardMetrics"); // Clear metrics on logout
     setDashboardMetrics({
       total_employees: 0,
       total_salary_paid: 0,
@@ -104,28 +122,6 @@ export const UserProvider = ({ children }: userProviderProps) => {
   useEffect(() => {
     setupInterceptors(logout);
   }, []);
-
-  const refreshUser = async (token: string) => {
-    try {
-      const response = await api.get(`/me`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      console.log("refresh response", response)
-
-      const updatedMe = response.data;
-      setDashboardMetrics({
-        total_employees: updatedMe?.total_employees,
-        total_salary_paid: updatedMe?.total_salary_paid,
-        no_CompletedPayments: updatedMe?.no_completed_payments,
-        total_estimated_salary: updatedMe?.total_estimated_salary,
-      });
-    } catch (err) {
-      console.error("Failed to refresh user:", err);
-    } finally {
-      setIsLoading(false)
-    }
-  };
 
   return (
     <UserContext.Provider
@@ -146,12 +142,4 @@ export const UserProvider = ({ children }: userProviderProps) => {
       {children}
     </UserContext.Provider>
   );
-};
-
-export const useUser = () => {
-  const context = useContext(UserContext);
-  if (!context) {
-    throw new Error("useUser must be used within an UserProvider");
-  }
-  return context;
 };

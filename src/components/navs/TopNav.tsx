@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { useUser } from '../../context/UserContext';
 import { MdKeyboardArrowDown, MdOutlineLogout } from 'react-icons/md';
 import { FaRegBell } from 'react-icons/fa6';
+import { useUser } from '../../hooks/UseUserContext';
 
 const TopNav = ({ pageName } : { pageName:string }) => {
     const { logout } = useUser();

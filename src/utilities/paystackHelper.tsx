@@ -1,5 +1,6 @@
 // utilities/paystackHelper.js
 import axios from "axios";
+import { getErrorMessage } from "./api";
 
 const PAYSTACK_SECRET_KEY = import.meta.env.VITE_PAYSTACK_SECRET_KEY;
 
@@ -31,11 +32,14 @@ export const fetchPaystackBanks = async () => {
  * @param {string} bankCode - The bank code for the account.
  * @returns {Promise<object|null>} - The resolved account data (e.g., { account_name, account_number }) or null on failure.
  */
-export const resolveAccountNumber = async (accountNumber: string, bankCode:string) => {
+export const resolveAccountNumber = async (
+  accountNumber: string,
+  bankCode: string,
+) => {
   if (!accountNumber || !bankCode || accountNumber.length !== 10) {
     return null;
   }
-  
+
   try {
     const response = await axios.get(
       `https://api.paystack.co/bank/resolve?account_number=${accountNumber}&bank_code=${bankCode}`,
@@ -43,16 +47,16 @@ export const resolveAccountNumber = async (accountNumber: string, bankCode:strin
         headers: {
           Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
         },
-      }
+      },
     );
 
     if (response.data.status && response.data.data) {
-      return response.data.data; 
+      return response.data.data;
     } else {
       throw new Error(response.data.message || "Failed to resolve account");
     }
-  } catch (error: any) {
-    console.error("Error resolving Paystack account:", error.response?.data?.message || error.message);
+  } catch (error: unknown) {
+    getErrorMessage(error);
     return null;
   }
 };

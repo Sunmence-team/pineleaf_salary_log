@@ -46,8 +46,44 @@ export interface groupTransactionProps {
   payments: transactionsProps[];
 }
 
+export interface userProviderProps {
+  children: React.ReactNode;
+}
+
+export interface userProps {
+  role: string;
+}
+
+export interface dashboardMetricsProps {
+  total_employees: number;
+  total_salary_paid: number;
+  no_CompletedPayments:number;
+  total_estimated_salary:number
+}
+
+export interface UserContextType {
+  user: userProps | null;
+  token: string | null;
+  role: string | null;
+  setToken: React.Dispatch<React.SetStateAction<string | null>>;
+  setUser: React.Dispatch<React.SetStateAction<userProps | null>>;
+  login: (token: string, user: userProps, metrics: dashboardMetricsProps) => void;
+  logout: () => void;
+  isLoggedIn: boolean;
+  refreshUser: (token: string) => Promise<void>;
+  isLoading: boolean;
+  dashboardMetrics: dashboardMetricsProps;
+}
+
 export interface branchOveriewProps {
   company_branch: string;
   total_employees: number;
   employers: employeeProps[];
+}
+
+export   interface userMetrics {
+  total_employees: number;
+  total_salary_paid: number;
+  no_CompletedPayments: number;
+  total_estimated_salary: number;
 }

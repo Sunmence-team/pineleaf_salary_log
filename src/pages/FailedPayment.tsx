@@ -1,11 +1,11 @@
 import React, { useCallback, useEffect, useState } from "react";
 import type {
   employeeProps,
-  groupTransactionProps
+  groupTransactionProps,
 } from "../store/sharedinterfaces";
 import { toast } from "sonner";
 import api from "../utilities/api";
-import { useUser } from "../context/UserContext";
+import { useUser } from "../hooks/UseUserContext";
 import PaginationControls from "../utilities/PaginationControls";
 import {
   formatISODateToCustom,
@@ -23,7 +23,9 @@ const FailedPayment: React.FC = () => {
   const params = new URLSearchParams(search);
   const month = params.get("month") || "";
   console.log("month param:", month);
-  const [transaction, setTransaction] = useState<groupTransactionProps | null>(null);
+  const [transaction, setTransaction] = useState<groupTransactionProps | null>(
+    null,
+  );
   const [isLoading, setIsLoading] = useState(true);
   const [currentPageFromApi, setCurrentPageFromApi] = useState(1);
   const [totalApiPages, setTotalApiPages] = useState(1);
@@ -55,29 +57,30 @@ const FailedPayment: React.FC = () => {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       );
 
-      console.log("response",response)
+      console.log("response", response);
 
       if (response.status === 200 && response.data.success) {
         setTransaction(response.data.data?.[0]);
-        console.log("response.data.data?.[0]", response.data.data?.[0])
+        console.log("response.data.data?.[0]", response.data.data?.[0]);
         setCurrentPageFromApi(response.data.pagination.current_page);
         setTotalApiPages(response.data.pagination.last_page);
       } else {
         toast.error(
           `Failed to fetch transaction: ${
             response.data.message || "Unknown error"
-          }`
+          }`,
         );
       }
     } catch (err: any) {
       toast.error(
-        err.response.data?.message || "Something went wrong on the server."
+        err.response.data?.message || "Something went wrong on the server.",
       );
       if (
-        err.response.data.message === "No salary paid for that month" && month
+        err.response.data.message === "No salary paid for that month" &&
+        month
       ) {
         toast.error("Couldn't find transaction for the selected month");
       } else {
@@ -108,7 +111,7 @@ const FailedPayment: React.FC = () => {
     const rows = data.map((obj) =>
       Object.values(obj)
         .map((value) => `"${value}"`)
-        .join(",")
+        .join(","),
     );
     return [headers, ...rows].join("\n");
   };
@@ -134,7 +137,7 @@ const FailedPayment: React.FC = () => {
       };
 
       const response = await api.post("/employees/paying_all", payload);
-      
+
       if (response && response.status === 200) {
         toast.success("Employee paying status updated successfully");
         fetchTransaction();
@@ -144,7 +147,7 @@ const FailedPayment: React.FC = () => {
       if (err.response) {
         toast.error(
           err.response.data?.message ||
-            "Server error during employee updating payment status."
+            "Server error during employee updating payment status.",
         );
       } else {
         toast.error("An unexpected error occurred. Please try again.");
@@ -182,7 +185,7 @@ const FailedPayment: React.FC = () => {
       console.error("Error initializing  payment:", err);
       if (err.response) {
         toast.error(
-          err.response.data?.message || "Server error during payment."
+          err.response.data?.message || "Server error during payment.",
         );
       } else {
         toast.error("An unexpected error occurred. Please try again.");
@@ -203,7 +206,7 @@ const FailedPayment: React.FC = () => {
       }
 
       setUpdatingStatus(true);
-      const loadingId = toast.loading("Processing request...")
+      const loadingId = toast.loading("Processing request...");
       try {
         const payload = {
           ids: userIdsToBeActedOn,
@@ -215,22 +218,26 @@ const FailedPayment: React.FC = () => {
         if (response && response.status === 200) {
           toast.success(
             `Successfully updated ${userIdsToBeActedOn.length} employee(s).`,
-          { id: loadingId });
+            { id: loadingId },
+          );
           fetchTransaction();
           setuserIdsToBeActedOn([]);
         } else {
-          toast.error(response.data?.message || "An error occurred.", { id: loadingId });
+          toast.error(response.data?.message || "An error occurred.", {
+            id: loadingId,
+          });
         }
       } catch (err: any) {
         console.error("Error during bulk update:", err);
         toast.error(
-          err.response?.data?.message || "An unexpected error occurred.", { id: loadingId }
+          err.response?.data?.message || "An unexpected error occurred.",
+          { id: loadingId },
         );
       } finally {
         setUpdatingStatus(false);
       }
     },
-    [userIdsToBeActedOn, fetchTransaction]
+    [userIdsToBeActedOn, fetchTransaction],
   );
 
   const handlePinDialog = () => {
@@ -241,32 +248,36 @@ const FailedPayment: React.FC = () => {
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { checked } = e.target;
     setuserIdsToBeActedOn((prevSelectedIds) => {
-      const currentEmployeeIds = transaction?.payments.map((emp) => Number(emp.employer_details.id));
+      const currentEmployeeIds = transaction?.payments.map((emp) =>
+        Number(emp.employer_details.id),
+      );
       if (checked) {
         // Add all current page employee IDs that are not already selected
         const newSelectedIds = [
-            ...new Set([...prevSelectedIds, ...(currentEmployeeIds || [])]),
+          ...new Set([...prevSelectedIds, ...(currentEmployeeIds || [])]),
         ];
         return newSelectedIds;
       } else {
         // Remove all current page employee IDs from selected
         const remainingSelectedIds = prevSelectedIds.filter(
-            (id) => !currentEmployeeIds?.includes(id)
+          (id) => !currentEmployeeIds?.includes(id),
         );
         return remainingSelectedIds;
       }
     });
   };
 
-  const employeeIdsOnCurrentPage = transaction?.payments?.map(emp => Number(emp.employer_details.id)) || [];
-  const allSelectedOnPage = employeeIdsOnCurrentPage.length > 0 && employeeIdsOnCurrentPage.every(id => userIdsToBeActedOn.includes(id));
-  const someSelectedOnPage = employeeIdsOnCurrentPage.some(id => userIdsToBeActedOn.includes(id)) && !allSelectedOnPage;
-
+  const employeeIdsOnCurrentPage =
+    transaction?.payments?.map((emp) => Number(emp.employer_details.id)) || [];
+  const allSelectedOnPage =
+    employeeIdsOnCurrentPage.length > 0 &&
+    employeeIdsOnCurrentPage.every((id) => userIdsToBeActedOn.includes(id));
+  const someSelectedOnPage =
+    employeeIdsOnCurrentPage.some((id) => userIdsToBeActedOn.includes(id)) &&
+    !allSelectedOnPage;
 
   return (
-    <div
-      className={`flex flex-col gap-8 px-4 lg:px-6`}
-    >
+    <div className={`flex flex-col gap-8 px-4 lg:px-6`}>
       <div className="overflow-x-auto rounded-lg no-scrollbar w-full lg:p-0 pe-4">
         <div className="flex flex-col gap-3">
           {isLoading ? (
@@ -291,38 +302,39 @@ const FailedPayment: React.FC = () => {
                 <div className="flex flex-col">
                   <h2 className="text-xl font-semibold">{transaction.month}</h2>
                   <h4 className="font-medium text-sm text-gray-600">
-                    Total amount paid: N{formatterUtility(+transaction.total_amount)}
+                    Total amount paid: N
+                    {formatterUtility(+transaction.total_amount)}
                   </h4>
                 </div>
                 <div className="flex items-stretch flex-col lg:flex-row gap-4">
-                  <button
-                    className="bg-pryClr text-white rounded-lg h-[45px] px-4 text-sm cursor-pointer font-semibold"
-                  >
+                  <button className="bg-pryClr text-white rounded-lg h-[45px] px-4 text-sm cursor-pointer font-semibold">
                     View transaction
                   </button>
                   <button
                     className="bg-tetClr text-white rounded-lg h-[45px] px-4 text-sm cursor-pointer font-semibold"
                     onClick={() => {
                       if (!transaction.payments?.length) {
-                        toast.error(
-                          "No transaction available for this month"
-                        );
+                        toast.error("No transaction available for this month");
                         return;
                       }
                       const loading = toast.loading("Exporting as CSV");
 
-                      const formatted = transaction.payments.map((item: any) => ({
-                        EmployeeName:
-                          item.employer_details?.full_name || "-",
-                        Amount: item.amount,
-                        Reference:
-                          item.employer_details?.recipient_code || "-",
-                        Status: item.status,
-                        PaymentDate:
-                          formatISODateToCustom(item.created_at) || "-",
-                      }));
+                      const formatted = transaction.payments.map(
+                        (item: any) => ({
+                          EmployeeName: item.employer_details?.full_name || "-",
+                          Amount: item.amount,
+                          Reference:
+                            item.employer_details?.recipient_code || "-",
+                          Status: item.status,
+                          PaymentDate:
+                            formatISODateToCustom(item.created_at) || "-",
+                        }),
+                      );
 
-                      downloadCSV(formatted, `${transaction.month}-transaction.csv`);
+                      downloadCSV(
+                        formatted,
+                        `${transaction.month}-transaction.csv`,
+                      );
                       toast.dismiss(loading);
                     }}
                   >
@@ -351,7 +363,7 @@ const FailedPayment: React.FC = () => {
                         className="accent-pryClr size-6"
                         checked={allSelectedOnPage}
                         onChange={handleSelectAll}
-                        ref={el => {
+                        ref={(el) => {
                           if (el) {
                             el.indeterminate = someSelectedOnPage;
                           }
@@ -359,20 +371,12 @@ const FailedPayment: React.FC = () => {
                       />
                     </th>
                     <th className="text-xs whitespace-nowrap">S/N</th>
-                    <th className="text-xs whitespace-nowrap">
-                      Employee Name
-                    </th>
+                    <th className="text-xs whitespace-nowrap">Employee Name</th>
 
-                    <th className="text-xs whitespace-nowrap">
-                      Amount
-                    </th>
+                    <th className="text-xs whitespace-nowrap">Amount</th>
                     <th className="text-xs whitespace-nowrap">REF</th>
-                    <th className="text-xs whitespace-nowrap">
-                      Status
-                    </th>
-                    <th className="p-4 text-xs whitespace-nowrap">
-                      Action
-                    </th>
+                    <th className="text-xs whitespace-nowrap">Status</th>
+                    <th className="p-4 text-xs whitespace-nowrap">Action</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -380,22 +384,30 @@ const FailedPayment: React.FC = () => {
                     <tr
                       key={idx}
                       className={`${idx % 2 === 0 ? "bg-secClr/90" : "bg-[#FFF]"} h-[50px] border-y border-black/10`}
-                      onMouseOver={() => setSelectedEmployee(t.employer_details)}
+                      onMouseOver={() =>
+                        setSelectedEmployee(t.employer_details)
+                      }
                     >
                       <td className="p-2 text-xs whitespace-nowrap font-medium">
                         <div className="flex items-center justify-center">
                           <input
                             type="checkbox"
                             className="accent-pryClr size-4"
-                            checked={userIdsToBeActedOn.includes(Number(t.employer_details.id))}
+                            checked={userIdsToBeActedOn.includes(
+                              Number(t.employer_details.id),
+                            )}
                             onChange={(e) => {
                               const { checked } = e.target;
-                              const employeeIdAsNumber = Number(t.employer_details.id);
+                              const employeeIdAsNumber = Number(
+                                t.employer_details.id,
+                              );
                               setuserIdsToBeActedOn((prev) => {
                                 if (checked) {
                                   return [...prev, employeeIdAsNumber];
                                 } else {
-                                  return prev.filter((id) => id !== employeeIdAsNumber);
+                                  return prev.filter(
+                                    (id) => id !== employeeIdAsNumber,
+                                  );
                                 }
                               });
                             }}
@@ -403,17 +415,15 @@ const FailedPayment: React.FC = () => {
                         </div>
                       </td>
                       <td>
-                        {(currentPageFromApi - 1) * apiItemsPerPage +
-                          (idx + 1)}
+                        {(currentPageFromApi - 1) * apiItemsPerPage + (idx + 1)}
                       </td>
                       <td className="p-4 text-xs whitespace-nowrap font-medium">
                         {t?.employer_details?.full_name || "-"}
                       </td>
                       <td className="p-4 text-xs whitespace-nowrap font-medium">
                         N
-                        {formatterUtility(
-                          Number(t.amount.toLocaleString())
-                        ) || "-"}
+                        {formatterUtility(Number(t.amount.toLocaleString())) ||
+                          "-"}
                       </td>
                       <td className="p-4 text-xs whitespace-nowrap font-medium">
                         {t?.employer_details?.recipient_code || "-"}
@@ -426,7 +436,9 @@ const FailedPayment: React.FC = () => {
                       <td className="p-4 text-xs whitespace-nowrap text-pryClr font-bold">
                         <button
                           className={`cursor-pointer disabled:cursor-not-allowed disabled:opacity-25 text- mx-auto w-10 h-10 flex justify-center items-center rounded-md duration-200 transition-all ${
-                            t?.employer_details.paying === 0 ? "text-pryClr hover:bg-pryClr/10" : "text-red-700 hover:bg-red-700/10"
+                            t?.employer_details.paying === 0
+                              ? "text-pryClr hover:bg-pryClr/10"
+                              : "text-red-700 hover:bg-red-700/10"
                           }`}
                           title={
                             t?.employer_details.paying === 0
@@ -435,14 +447,13 @@ const FailedPayment: React.FC = () => {
                           }
                           onClick={() => setShowUpdateConfirmModal(true)}
                         >
-                          {t?.employer_details.paying === 0
-                            ? 
+                          {t?.employer_details.paying === 0 ? (
                             // "Include Employee"
                             <RiUserAddLine size={18} />
-                            : 
+                          ) : (
                             // "Exclude Employee"
                             <RiUserMinusLine size={18} />
-                          }
+                          )}
                         </button>
                       </td>
                     </tr>
@@ -450,9 +461,7 @@ const FailedPayment: React.FC = () => {
                 </tbody>
                 <tfoot>
                   <tr
-                    className={
-                      "bg-white/61 h-[65px] border-t border-black/10"
-                    }
+                    className={"bg-white/61 h-[65px] border-t border-black/10"}
                   >
                     <td className="text-center p-4" colSpan={8}>
                       <PaginationControls
@@ -469,38 +478,35 @@ const FailedPayment: React.FC = () => {
         </div>
       </div>
 
-
-      {
-        userIdsToBeActedOn.length > 0 && (
-          <div className="fixed z-999 right-6 bottom-8 bg-white max-w-[320px] rounded-lg shadow-2xl border border-pryClr/10 p-4 flex gap-2 items-center justify-center">
-            <p className="font-medium">
-              {userIdsToBeActedOn.length} employee(s) selected.
-            </p>
-            <div className="flex gap-2">
-              <button
-                className="w-full px-3 h-10 rounded-md cursor-pointer text-sm text-pryClr hover:bg-pryClr/10 hover:opacity-90"
-                title="Include Selected"
-                disabled={updatingStatus}
-                onClick={() => {
-                  handleBulkUpdate(1);
-                }}
-              >
-                <TbUsersPlus size={18} />
-              </button>
-              <button
-                className="w-full px-3 h-10 rounded-md cursor-pointer text-sm text-red-600 hover:bg-red-600/10 hover:opacity-90"
-                title="Exclude Selected"
-                disabled={updatingStatus}
-                onClick={() => {
-                  handleBulkUpdate(0);
-                }}
-              >
-                <TbUsersMinus size={18} />
-              </button>
-            </div>
+      {userIdsToBeActedOn.length > 0 && (
+        <div className="fixed z-999 right-6 bottom-8 bg-white max-w-[320px] rounded-lg shadow-2xl border border-pryClr/10 p-4 flex gap-2 items-center justify-center">
+          <p className="font-medium">
+            {userIdsToBeActedOn.length} employee(s) selected.
+          </p>
+          <div className="flex gap-2">
+            <button
+              className="w-full px-3 h-10 rounded-md cursor-pointer text-sm text-pryClr hover:bg-pryClr/10 hover:opacity-90"
+              title="Include Selected"
+              disabled={updatingStatus}
+              onClick={() => {
+                handleBulkUpdate(1);
+              }}
+            >
+              <TbUsersPlus size={18} />
+            </button>
+            <button
+              className="w-full px-3 h-10 rounded-md cursor-pointer text-sm text-red-600 hover:bg-red-600/10 hover:opacity-90"
+              title="Exclude Selected"
+              disabled={updatingStatus}
+              onClick={() => {
+                handleBulkUpdate(0);
+              }}
+            >
+              <TbUsersMinus size={18} />
+            </button>
           </div>
-        )
-      }
+        </div>
+      )}
 
       <ConfirmDialog
         isOpen={showConfirmModal}

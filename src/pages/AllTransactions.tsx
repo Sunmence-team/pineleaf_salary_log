@@ -5,7 +5,6 @@ import type {
 } from "../store/sharedinterfaces";
 import { toast } from "sonner";
 import api from "../utilities/api";
-import { useUser } from "../context/UserContext";
 import PaginationControls from "../utilities/PaginationControls";
 import {
   formatISODateToCustom,
@@ -14,6 +13,7 @@ import {
 } from "../utilities/FormatterUtility";
 import { CgSpinner } from "react-icons/cg";
 import { Link } from "react-router-dom";
+import { useUser } from "../hooks/UseUserContext";
 interface AllCotransactionsProps {
   isRecent: boolean;
 }

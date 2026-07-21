@@ -13,11 +13,11 @@ import {
 } from "../utilities/FormatterUtility";
 import { FiChevronDown, FiSearch } from "react-icons/fi";
 import { toast } from "sonner";
-import { useUser } from "../context/UserContext";
 import api from "../utilities/api";
 import type { employeeProps } from "../store/sharedinterfaces";
 import EditEmployee from "../components/modal/EditEmployee";
 import ViewEmployee from "../components/modal/ViewEmployee";
+import { useUser } from "../hooks/UseUserContext";
 
 const AllEmployees = () => {
   const [searchQuery, setSearchQuery] = useState("");
