@@ -4,6 +4,7 @@ import type {
   AddEmployeePayload,
   FetchEmployeesParams,
   UpdateEmployeePayload,
+  UpdatePayingStatusPayload,
 } from "../store/sharedinterfaces";
 
 const COUNTRY_URL = import.meta.env.VITE_COUNTRY_BASE_URL;
@@ -27,9 +28,11 @@ export const fetchEmployees = async ({
   search = "",
   page = 1,
   per_page = 5,
+  paying = "",
+  company_branch = "",
 }: FetchEmployeesParams = {}) => {
   const res = await api.get(
-    `/all_employers?search=${search}&page=${page}&per_page=${per_page}`,
+    `/all_employers?search=${search}&page=${page}&per_page=${per_page}&paying=${paying}&company_branch=${company_branch}`,
   );
   return res.data;
 };
@@ -39,17 +42,18 @@ export const deleteEmployee = async (id: string) => {
   return res.data;
 };
 
-export const updateEmployee = async ({ id, payload }: UpdateEmployeePayload) => {
+export const updateEmployee = async ({
+  id,
+  payload,
+}: UpdateEmployeePayload) => {
   const res = await api.put(`/edit_employers/${id}`, payload);
   return res.data;
 };
-
 
 export const fetchCountries = async () => {
   const response = await axios.get(`${COUNTRY_URL}/api/countries`);
   return response.data;
 };
-
 
 export const fetchStates = async (countryId: number) => {
   const response = await axios.get(
@@ -63,4 +67,14 @@ export const fetchBranchesOverview = async () => {
   return res.data;
 };
 
+export const updatePayingStatus = async (
+  payload: UpdatePayingStatusPayload,
+) => {
+  const res = await api.post("/employees/paying_all", payload);
+  return res.data;
+};
 
+export const triggerPayroll = async (code: string) => {
+  const res = await api.post("/trigger-payroll", { code });
+  return res.data;
+};

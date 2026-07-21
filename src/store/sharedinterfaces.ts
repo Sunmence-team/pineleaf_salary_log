@@ -57,8 +57,8 @@ export interface userProps {
 export interface dashboardMetricsProps {
   total_employees: number;
   total_salary_paid: number;
-  no_CompletedPayments:number;
-  total_estimated_salary:number
+  no_CompletedPayments: number;
+  total_estimated_salary: number;
 }
 
 export interface UserContextType {
@@ -67,7 +67,11 @@ export interface UserContextType {
   role: string | null;
   setToken: React.Dispatch<React.SetStateAction<string | null>>;
   setUser: React.Dispatch<React.SetStateAction<userProps | null>>;
-  login: (token: string, user: userProps, metrics: dashboardMetricsProps) => void;
+  login: (
+    token: string,
+    user: userProps,
+    metrics: dashboardMetricsProps,
+  ) => void;
   logout: () => void;
   isLoggedIn: boolean;
   refreshUser: (token: string) => Promise<void>;
@@ -112,6 +116,8 @@ export interface FetchEmployeesParams {
   search?: string;
   page?: number;
   per_page?: number;
+  paying?: string;
+  company_branch?: string;
 }
 
 export interface UpdateEmployeePayload {
@@ -141,7 +147,6 @@ export interface EditEmployeeFormValues {
   sub_charge_reason: string;
   sub_charge_months: string | number;
 }
-
 
 export interface CountryApiResponse {
   name: string;
@@ -181,4 +186,10 @@ export interface ConfirmDialogProps {
   onCancel: () => void;
   onConfirm: () => void;
   isLoading?: boolean;
-}
+}
+
+export interface UpdatePayingStatusPayload {
+  ids: (number | string)[];
+  paying: 0 | 1;
+}
+

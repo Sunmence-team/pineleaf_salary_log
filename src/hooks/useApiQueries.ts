@@ -9,13 +9,18 @@ import {
   fetchCountries,
   fetchStates,
   fetchBranchesOverview,
+  updatePayingStatus,
+  triggerPayroll,
 } from "../utilities/apiFunctions";
 import {
   fetchPaystackBanks,
   resolveAccountNumber,
 } from "../utilities/paystackHelper";
 import { toast } from "sonner";
-import type { FetchEmployeesParams, userMetrics } from "../store/sharedinterfaces";
+import type {
+  FetchEmployeesParams,
+  userMetrics,
+} from "../store/sharedinterfaces";
 import { useNavigate } from "react-router-dom";
 import { getErrorMessage } from "../utilities/api";
 import { useUser } from "./UseUserContext";
@@ -79,7 +84,14 @@ export const useCreateEmployeeMutation = () => {
 
 export const useEmployeesQuery = (params: FetchEmployeesParams) => {
   return useQuery({
-    queryKey: ["employees", params.search || "", params.page || 1, params.per_page || 5],
+    queryKey: [
+      "employees",
+      params.search || "",
+      params.page || 1,
+      params.per_page || 5,
+      params.paying || "",
+      params.company_branch || "",
+    ],
     queryFn: () => fetchEmployees(params),
   });
 };
@@ -115,7 +127,6 @@ export const useUpdateEmployeeMutation = () => {
     },
   });
 };
-
 
 export const usePaystackBanksQuery = () => {
   return useQuery({
@@ -161,5 +172,32 @@ export const useBranchesOverviewQuery = () => {
   });
 };
 
+export const useUpdatePayingStatusMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: updatePayingStatus,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["employees"] });
+      queryClient.invalidateQueries({ queryKey: ["branches-overview"] });
+    },
+    onError: (error) => {
+      const errMsg = getErrorMessage(error, "An unexpected error occurred");
+      toast.error(errMsg);
+    },
+  });
+};
 
-
+export const useTriggerPayrollMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: triggerPayroll,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["employees"] });
+      queryClient.invalidateQueries({ queryKey: ["branches-overview"] });
+    },
+    onError: (error) => {
+      const errMsg = getErrorMessage(error, "Failed to initialize payment");
+      toast.error(errMsg);
+    },
+  });
+};
