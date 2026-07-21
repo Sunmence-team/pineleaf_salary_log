@@ -29,7 +29,6 @@ import { useNavigate } from "react-router-dom";
 import { getErrorMessage } from "../utilities/api";
 import { useUser } from "./UseUserContext";
 
-
 export const useLoginMutation = () => {
   const { login } = useUser();
   const navigate = useNavigate();
@@ -64,10 +63,11 @@ export const useLoginMutation = () => {
   });
 };
 
-export const useRefreshUserQuery = () => {
+export const useRefreshUserQuery = (token: string | null) => {
   return useQuery({
     queryKey: ["refresh-user"],
     queryFn: refreshUser,
+    enabled: !token ? false : true,
   });
 };
 
@@ -213,16 +213,24 @@ export const useTriggerPayrollMutation = () => {
 
 export const useTransactionsQuery = (params: FetchTransactionsParams) => {
   return useQuery({
-    queryKey: ["transactions", params.month || "", params.page || 1, params.per_page || 5],
+    queryKey: [
+      "transactions",
+      params.month || "",
+      params.page || 1,
+      params.per_page || 5,
+    ],
     queryFn: () => fetchTransactions(params),
   });
 };
 
 export const useFailedPaymentsQuery = (params: FetchFailedPaymentsParams) => {
   return useQuery({
-    queryKey: ["failed-payments", params.month || "", params.page || 1, params.per_page || 5],
+    queryKey: [
+      "failed-payments",
+      params.month || "",
+      params.page || 1,
+      params.per_page || 5,
+    ],
     queryFn: () => fetchFailedPayments(params),
   });
 };
-
-
