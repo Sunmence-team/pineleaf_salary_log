@@ -1,11 +1,9 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import type {
   groupTransactionProps,
   transactionsProps,
 } from "../store/sharedinterfaces";
 import { toast } from "sonner";
-import api from "../utilities/api";
-import { useUser } from "../context/UserContext";
 import PaginationControls from "../utilities/PaginationControls";
 import {
   formatISODateToCustom,
@@ -14,77 +12,38 @@ import {
 } from "../utilities/FormatterUtility";
 import { CgSpinner } from "react-icons/cg";
 import { Link } from "react-router-dom";
+import { useTransactionsQuery } from "../hooks/useApiQueries";
+import { getErrorMessage } from "../utilities/api";
+
 interface AllCotransactionsProps {
   isRecent: boolean;
 }
 
 const AllTransactions: React.FC<AllCotransactionsProps> = ({ isRecent }) => {
-  const { token } = useUser();
-  const [transactions, setTransactions] = useState<groupTransactionProps[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  // const [error, setError] = useState<any>(null);
   const [selectedMonth, setSelectedMonth] = useState("");
   const [currentPageFromApi, setCurrentPageFromApi] = useState(1);
-  const [totalApiPages, setTotalApiPages] = useState(1);
 
   const apiItemsPerPage = 10;
 
-  const fetchTransactions = useCallback(async () => {
-    setIsLoading(true);
-    // setError(null);
+  // React Query hook
+  const { data, isLoading, error } = useTransactionsQuery({
+    page: currentPageFromApi,
+    per_page: apiItemsPerPage,
+    month: selectedMonth === "all" ? "" : selectedMonth,
+  });
 
-    try {
-      const response = await api.get(
-        `/payments?page=${currentPageFromApi}&per_page=${apiItemsPerPage}`,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      console.log("response",response)
-
-      if (response.status === 200 && response.data.success) {
-        setTransactions(response.data.data);
-        setCurrentPageFromApi(response.data.pagination.current_page);
-        setTotalApiPages(response.data.pagination.last_page);
-      } else {
-        toast.error(
-          `Failed to fetch transactions: ${
-            response.data.message || "Unknown error"
-          }`
-        );
-      }
-    } catch (err: any) {
-      toast.error(
-        err.response.data?.message || "Something went wrong on the server."
-      );
-      if (
-        err.response.data.message === "No salary paid for that month" && selectedMonth
-      ) {
-        toast.error("Couldn't find transaction for the selected month");
-      } else {
-        toast.error("No transactions found");
-      }
-      console.error("Unexpected error occurred. Please try again.", err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [token, currentPageFromApi, apiItemsPerPage]);
+  const transactions: groupTransactionProps[] = useMemo(() => data?.data ?? [], [data]);
+  const totalApiPages = useMemo(() => data?.pagination?.last_page ?? 1, [data]);
 
   useEffect(() => {
-    const delayDebounce = setTimeout(() => {
-      fetchTransactions();
-    }, 500);
-
-    return () => clearTimeout(delayDebounce);
-  }, [fetchTransactions]);
+    if (error) {
+      toast.error(getErrorMessage(error, "Failed to load transactions."));
+    }
+  }, [error]);
 
   useEffect(() => {
     setCurrentPageFromApi(1);
-  }, []);
+  }, [selectedMonth]);
 
   const transactionToShow = isRecent ? transactions.slice(0, 5) : transactions;
   const [availableTransaction, setAvailableTransaction] = useState<{
@@ -95,7 +54,7 @@ const AllTransactions: React.FC<AllCotransactionsProps> = ({ isRecent }) => {
     transactions: [],
   });
 
-  const convertToCSV = (data: any[]) => {
+  const convertToCSV = (data: Record<string, unknown>[]) => {
     if (!data.length) return "";
 
     const headers = Object.keys(data[0]).join(",");
@@ -107,7 +66,7 @@ const AllTransactions: React.FC<AllCotransactionsProps> = ({ isRecent }) => {
     return [headers, ...rows].join("\n");
   };
 
-  const downloadCSV = (data: any[], fileName = "transactions.csv") => {
+  const downloadCSV = (data: Record<string, unknown>[], fileName = "transactions.csv") => {
     const csv = convertToCSV(data);
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
@@ -140,61 +99,6 @@ const AllTransactions: React.FC<AllCotransactionsProps> = ({ isRecent }) => {
     return result;
   }
 
-  useEffect(() => {
-    if (selectedMonth && selectedMonth !== "all") {
-      const fetchTransactions = async () => {
-        setIsLoading(true);
-        // setError(null);
-
-        try {
-          const response = await api.get(
-            `/payments?month=${selectedMonth}&page=${currentPageFromApi}&per_page=${apiItemsPerPage}`,
-            {
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          );
-
-          if (response.status === 200 && response.data.success) {
-            setTransactions(response.data.data);
-            setCurrentPageFromApi(response.data.pagination.current_page);
-            setTotalApiPages(response.data.pagination.last_page);
-          } else {
-            toast.error(
-              `Failed to fetch transactions: ${
-                response.data.message || "Unknown error"
-              }`
-            );
-          }
-        } catch (err: any) {
-          if (err.code === "ECONNABORTED") {
-            toast.error("Request timed out. Please try again.");
-          } else if (err.response) {
-            toast.error(
-              err.response.data?.message ||
-                "Something went wrong on the server."
-            );
-          } else if (
-            err.response.data.message === "No salary paid for that month" && selectedMonth
-          ) {
-            toast.error("Couldn't find transaction for the selected month");
-          } else if (err.request) {
-            toast.error("Server not responding. Please check your connection.");
-          } else {
-            toast.error("Unexpected error occurred. Please try again.");
-          }
-          // setError(err);
-        } finally {
-          setIsLoading(false);
-        }
-      };
-      fetchTransactions();
-    } else {
-      fetchTransactions();
-    }
-  }, [selectedMonth]);
 
   return (
     <div
@@ -281,7 +185,7 @@ const AllTransactions: React.FC<AllCotransactionsProps> = ({ isRecent }) => {
                           }
                           const loading = toast.loading("Exporting as CSV");
 
-                          const formatted = t.payments.map((item: any) => ({
+                          const formatted = t.payments.map((item: transactionsProps) => ({
                             EmployeeName:
                               item.employer_details?.full_name || "-",
                             Amount: item.amount,

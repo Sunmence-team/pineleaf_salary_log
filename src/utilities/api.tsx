@@ -19,7 +19,7 @@ export const setupInterceptors = (logout: () => void) => {
       }
       return config;
     },
-    (error) => Promise.reject(error)
+    (error) => Promise.reject(error),
   );
   api.interceptors.response.use(
     (response) => response,
@@ -32,8 +32,23 @@ export const setupInterceptors = (logout: () => void) => {
         logout();
       }
       return Promise.reject(error);
-    }
+    },
   );
 };
+
+export function getErrorMessage(
+  error: unknown,
+  fallback = "Something went wrong",
+): string {
+  if (axios.isAxiosError(error)) {
+    return error.response?.data?.message || error.message || fallback;
+  }
+
+  if (error instanceof Error) {
+    return error.message || fallback;
+  }
+
+  return fallback;
+}
 
 export default api;

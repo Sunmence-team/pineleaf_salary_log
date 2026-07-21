@@ -1,41 +1,27 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { toast } from "sonner";
-import {
-  fetchPaystackBanks,
-  resolveAccountNumber,
-} from "../utilities/paystackHelper";
-import type { bankProps } from "../store/sharedinterfaces";
-import api from "../utilities/api";
-import axios from "axios";
+import type {
+  bankProps,
+  AddEmployeePayload,
+  CountryApiResponse,
+  StateItem,
+} from "../store/sharedinterfaces";
 import FormattedNumberInput from "../components/forms/FormattedNumberInput";
 import { formatDateToYYYYMMDD } from "../utilities/FormatterUtility";
+import {
+  useCreateEmployeeMutation,
+  usePaystackBanksQuery,
+  useResolveAccountQuery,
+  useCountriesQuery,
+  useStatesQuery,
+} from "../hooks/useApiQueries";
 
-const API_URL = import.meta.env.VITE_API_BASE_URL;
-const COUNTRY_URL = import.meta.env.VITE_COUNTRY_BASE_URL;
-
-interface CountryApiResponse {
-  name: string;
-  id: number;
-  iso2: string;
-}
-
-interface StateItem {
-  name: string;
-  isoCode: string;
-}
 
 const AddEmployee = () => {
-  const [banks, setBanks] = useState<bankProps[]>([]);
-  const [isLoadingBanks, setIsLoadingBanks] = useState(true);
-  const [isResolving, setIsResolving] = useState(false);
   const [selectedBankCode, setSelectedBankCode] = useState("");
-  const [countries, setCountries] = useState<string[]>([]);
-  const [loadingCountries, setLoadingCountries] = useState(false);
-  const [states, setStates] = useState<string[]>([]);
-  const [loadingStates, setLoadingStates] = useState(false);
-  const [countryIdMap, setCountryIdMap] = useState<Record<string, number>>({});
+
   const branches = [
     "HQ - Onitsha",
     "Mgbuka",
@@ -52,25 +38,45 @@ const AddEmployee = () => {
     "Enugu",
     "Amuwo odofin Lagos",
     "Ebonyi",
-    "Nkpor"
+    "Nkpor",
   ];
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    const getBanks = async () => {
-      setIsLoadingBanks(true);
-      try {
-        const fetchedBanks = await fetchPaystackBanks();
-        setBanks(fetchedBanks);
-      } catch (error) {
-        console.log("Error fetching banks: ", error);
-        toast.error("Failed to load banks.");
-      } finally {
-        setIsLoadingBanks(false);
-      }
-    };
-    getBanks();
   }, []);
+
+  const { data: rawBanks, isLoading: isLoadingBanks, isError: isBanksError } = usePaystackBanksQuery();
+  const banks: bankProps[] = rawBanks || [];
+
+  useEffect(() => {
+    if (isBanksError) {
+      toast.error("Failed to load banks.");
+    }
+  }, [isBanksError]);
+
+  const { data: rawCountries, isLoading: loadingCountries } = useCountriesQuery();
+
+  const { countries, countryIdMap } = useMemo(() => {
+    if (!rawCountries || !Array.isArray(rawCountries)) {
+      return { countries: [], countryIdMap: {} };
+    }
+    const resData: CountryApiResponse[] = rawCountries;
+    const countryList = resData
+      .map((c) => ({ name: c.name, id: c.id, iso2: c.iso2 }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+
+    const idMap: Record<string, number> = {};
+    resData.forEach((c) => {
+      idMap[c.name] = c.id;
+    });
+
+    return {
+      countries: countryList.map((c) => c.name),
+      countryIdMap: idMap,
+    };
+  }, [rawCountries]);
+
+  const createEmployeeMutation = useCreateEmployeeMutation();
 
   const formik = useFormik({
     initialValues: {
@@ -117,51 +123,58 @@ const AddEmployee = () => {
       country: Yup.string().required("Country is required"),
       state: Yup.string().required("State is required"),
     }),
-    onSubmit: async (values, { resetForm, setSubmitting }) => {
-      try {
-        const payload = {
-          full_name: `${values.firstName} ${values.lastName}`,
-          email: values.email,
-          phone: values.phoneNumber,
-          gender: values.gender,
-          dob: values.dob,
-          jobTitle: values.jobTitle,
-          employmentType: values.employmentType,
-          employmentDate: values.employmentDate,
-          department: values.department,
-          bank_name: values.bank_name,
-          account_name: values.account_name,
-          account_number: values.account_number,
-          salary_amount: values.salary_amount,
-          company_branch: values.company_branch,
-          address: values.address,
-          state: values.state,
-          country: values.country,
-        };
-        console.log("employee create values: ", payload);
+    onSubmit: (values, { resetForm }) => {
+      const payload: AddEmployeePayload = {
+        full_name: `${values.firstName} ${values.lastName}`,
+        email: values.email,
+        phone: values.phoneNumber,
+        gender: values.gender,
+        dob: values.dob,
+        jobTitle: values.jobTitle,
+        employmentType: values.employmentType,
+        employmentDate: values.employmentDate,
+        department: values.department,
+        bank_name: values.bank_name,
+        account_name: values.account_name,
+        account_number: values.account_number,
+        salary_amount: values.salary_amount,
+        company_branch: values.company_branch,
+        address: values.address,
+        state: values.state,
+        country: values.country,
+      };
 
-        const response = await api.post(`${API_URL}/employers`, payload);
-
-        if (response.status === 200 || response.status === 201) {
-          toast.success(
-            response.data.message || "Employee added successfully!",
-          );
+      createEmployeeMutation.mutate(payload, {
+        onSuccess: () => {
           resetForm();
-          setSelectedBankCode(""); // Reset bank code too
-        }
-      } catch (error: any) {
-        console.error("Creation failed!", error);
-        toast.error(
-          error?.response?.data?.message || "Error creating employee",
-        );
-      } finally {
-        setSubmitting(false);
-      }
+          setSelectedBankCode("");
+        },
+      });
     },
   });
 
-  // Extract setFieldValue to avoid dependency issues
   const { setFieldValue } = formik;
+
+  // Selected country ID for fetching states
+  const selectedCountryId = countryIdMap[formik.values.country];
+  const { data: rawStates, isLoading: loadingStates } = useStatesQuery(selectedCountryId);
+
+  const states = useMemo(() => {
+    if (!rawStates || !Array.isArray(rawStates)) return [];
+    return (rawStates as StateItem[]).map((s) => s.name).sort();
+  }, [rawStates]);
+
+  // Reset state selection when country changes
+  useEffect(() => {
+    setFieldValue("state", "");
+  }, [formik.values.country, setFieldValue]);
+
+  // Account resolution query
+  const {
+    data: resolvedData,
+    isFetching: isResolving,
+    error: resolveError,
+  } = useResolveAccountQuery(formik.values.account_number, selectedBankCode);
 
   // Clear account name when account number changes or is not 10 digits
   useEffect(() => {
@@ -170,42 +183,23 @@ const AddEmployee = () => {
     }
   }, [formik.values.account_number, setFieldValue]);
 
-  // Resolve account name when account number is exactly 10 digits and bank is selected
+  // Update account name on successful resolution
   useEffect(() => {
-    const resolveAccount = async () => {
-      const accountNumber = formik.values.account_number;
-
-      if (accountNumber.length === 10 && selectedBankCode) {
-        setIsResolving(true);
-        try {
-          const resolvedData = await resolveAccountNumber(
-            accountNumber,
-            selectedBankCode,
-          );
-
-          if (resolvedData && resolvedData.account_name) {
-            setFieldValue("account_name", resolvedData.account_name);
-            toast.success("Account name resolved successfully!");
-          } else {
-            setFieldValue("account_name", "");
-            toast.error(
-              "Could not resolve account name. Please check details.",
-            );
-          }
-        } catch (error) {
-          console.error("Resolution error:", error);
-          setFieldValue("account_name", "");
-          toast.error("An error occurred while resolving the account.");
-        } finally {
-          setIsResolving(false);
-        }
+    if (formik.values.account_number.length === 10 && selectedBankCode) {
+      if (resolvedData && resolvedData.account_name) {
+        setFieldValue("account_name", resolvedData.account_name);
+        toast.success("Account name resolved successfully!");
       }
-    };
+    }
+  }, [resolvedData, formik.values.account_number, selectedBankCode, setFieldValue]);
 
-    // Debounce the resolution call
-    const handler = setTimeout(() => resolveAccount(), 800);
-    return () => clearTimeout(handler);
-  }, [formik.values.account_number, selectedBankCode, setFieldValue]);
+  // Handle resolution error
+  useEffect(() => {
+    if (resolveError && formik.values.account_number.length === 10 && selectedBankCode) {
+      setFieldValue("account_name", "");
+      toast.error("Could not resolve account name. Please check details.");
+    }
+  }, [resolveError, formik.values.account_number, selectedBankCode, setFieldValue]);
 
   const handleBankChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedName = event.target.value;
@@ -215,75 +209,6 @@ const AddEmployee = () => {
     setFieldValue("account_name", ""); // Clear account name when bank changes
     setSelectedBankCode(selectedBank ? selectedBank.code : "");
   };
-
-  useEffect(() => {
-    const fetchCountries = async () => {
-      setLoadingCountries(true);
-      try {
-        const response = await axios.get(`${COUNTRY_URL}/api/countries`);
-        // console.log("response", response)
-        const resData: CountryApiResponse[] = response.data;
-
-        if (response.status !== 200) {
-          throw new Error(`Request failed with status ${response.status}`);
-        }
-
-        if (!resData || resData.length === 0) {
-          throw new Error("No countries found");
-        }
-
-        const countryList = resData
-          .map((c) => ({ name: c.name, id: c.id, iso2: c.iso2 }))
-          .sort((a, b) => a.name.localeCompare(b.name));
-
-        const idMap: Record<string, number> = {};
-
-        resData.forEach((c) => {
-          idMap[c.name] = c.id;
-        });
-
-        setCountries(countryList.map((c) => c.name));
-        setCountryIdMap(idMap);
-
-        setCountries(countryList.map((c) => c.name));
-      } catch (error) {
-        console.error("Error fetching countries:", error);
-      } finally {
-        setLoadingCountries(false);
-      }
-    };
-    fetchCountries();
-  }, []);
-
-  useEffect(() => {
-    if (formik.values.country) {
-      const fetchStates = async () => {
-        setLoadingStates(true);
-        const countryId = countryIdMap[formik.values.country];
-        try {
-          const response = await fetch(
-            `${COUNTRY_URL}/api/countries/${countryId}/states`,
-          );
-          const result = await response.json();
-          if (result.error) throw new Error(result.msg);
-
-          const stateList = result?.map((s: StateItem) => s.name) || [];
-          setStates(stateList.sort());
-          formik.setFieldValue("state", "");
-        } catch (error) {
-          console.error("Error fetching states: ", error);
-          setStates([]);
-          formik.setFieldValue("state", "");
-        } finally {
-          setLoadingStates(false);
-        }
-      };
-      fetchStates();
-    } else {
-      setStates([]);
-      formik.setFieldValue("state", "");
-    }
-  }, [formik.values.country]);
 
   return (
     <div className="px-4 md:px-6">
@@ -418,7 +343,7 @@ const AddEmployee = () => {
           </div>
 
           <div className="flex flex-col gap-2">
-            <label htmlFor="dob" className="text-sm font-medium">
+            <label htmlFor="country" className="text-sm font-medium">
               Country
             </label>
             <select
@@ -429,7 +354,7 @@ const AddEmployee = () => {
               onBlur={formik.handleBlur}
               className="w-full h-[45px] text-sm indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
             >
-              <option selected>
+              <option value="">
                 {loadingCountries
                   ? "Fetching countries..."
                   : "Choose your country"}
@@ -446,7 +371,7 @@ const AddEmployee = () => {
           </div>
 
           <div className="flex flex-col gap-2">
-            <label htmlFor="dob" className="text-sm font-medium">
+            <label htmlFor="state" className="text-sm font-medium">
               State
             </label>
             <select
@@ -457,7 +382,7 @@ const AddEmployee = () => {
               onBlur={formik.handleBlur}
               className="w-full h-[45px] text-sm indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
             >
-              <option selected>
+              <option value="">
                 {loadingStates
                   ? "Fetching country states..."
                   : "Select your state"}
@@ -483,7 +408,7 @@ const AddEmployee = () => {
               value={formik.values.address}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              className="py-4  indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
+              className="py-4 indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
             ></textarea>
             {formik.touched.address && formik.errors.address && (
               <p className="text-sm text-red-600">{formik.errors.address}</p>
@@ -543,11 +468,10 @@ const AddEmployee = () => {
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
               value={formik.values.company_branch}
-              defaultValue={""}
               disabled={branches.length === 0}
               className="w-full h-[45px] text-sm indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr disabled:bg-gray-100 disabled:cursor-not-allowed"
             >
-              <option disabled value="">
+              <option value="">
                 Pick Branch
               </option>
               {branches.map((branch) => (
@@ -719,10 +643,10 @@ const AddEmployee = () => {
           <div className="md:col-span-2">
             <button
               type="submit"
-              disabled={!formik.isValid || formik.isSubmitting}
+              disabled={!formik.isValid || createEmployeeMutation.isPending}
               className="mt-5 h-[50px] w-full md:w-auto md:px-12 bg-pryClr text-white rounded-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
             >
-              {formik.isSubmitting ? "Adding Employee..." : "Add Employee"}
+              {createEmployeeMutation.isPending ? "Adding Employee..." : "Add Employee"}
             </button>
           </div>
         </form>
@@ -732,3 +656,4 @@ const AddEmployee = () => {
 };
 
 export default AddEmployee;
+

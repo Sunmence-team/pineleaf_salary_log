@@ -1,5 +1,5 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, type Variants } from "framer-motion";
 import { useLocation } from 'react-router-dom';
 import LeftNav from '../components/navs/LeftNav';
 import TopNav from '../components/navs/TopNav';
@@ -19,7 +19,7 @@ const MainLayout = ({ children, pageName }: LayoutProps) => {
     
     const location = useLocation();
     const mainContentRef = useRef<HTMLDivElement | null>(null);
-    const pageVariants = {
+    const pageVariants: Variants = {
         initial: {
             opacity: 0,
             x: -20,
@@ -41,6 +41,7 @@ const MainLayout = ({ children, pageName }: LayoutProps) => {
             },
         },
     };
+
 
     useEffect(() => {
         if ('scrollRestoration' in window.history) {
@@ -153,7 +154,7 @@ const MainLayout = ({ children, pageName }: LayoutProps) => {
                             initial="initial"
                             animate="animate"
                             exit="exit"
-                            variants={pageVariants as any}
+                            variants={pageVariants}
                             style={{ minHeight: "100%", display: "flex", flexDirection: "column" }}
                         >
                             {children}

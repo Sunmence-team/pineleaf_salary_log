@@ -1,14 +1,6 @@
 import Modal from "./Modal";
-import type { employeeProps } from "../../store/sharedinterfaces";
+import type { ViewEmployeeProps } from "../../store/sharedinterfaces";
 
-interface ViewEmployeeProps {
-  isOpen: boolean;
-  title?: string;
-  employee: employeeProps | null;
-  onClose: () => void;
-  onUpdate: () => void;
-showEditButton?: boolean;
-}
 
 const ViewEmployee = ({
   isOpen,

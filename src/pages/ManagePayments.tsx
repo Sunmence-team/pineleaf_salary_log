@@ -1,56 +1,50 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import PaginationControls from "../utilities/PaginationControls";
 import { toast } from "sonner";
-import { useUser } from "../context/UserContext";
-import api from "../utilities/api";
 import type { employeeProps } from "../store/sharedinterfaces";
 import ConfirmDialog from "../components/modal/ConfirmDialog";
-import {
-  formatterUtility,
-} from "../utilities/FormatterUtility";
+import { formatterUtility } from "../utilities/FormatterUtility";
 import VerificationCodeDialog from "../components/modal/VerificationCodeDialog";
 import { RiUserAddLine, RiUserMinusLine } from "react-icons/ri";
 import { FiSearch } from "react-icons/fi";
 import { MdOutlineFilterAlt } from "react-icons/md";
 import { TbUsersPlus, TbUsersMinus } from "react-icons/tb";
 import { generatePerPageOptions } from "../utilities/generatePerPageOptions";
+import {
+  useEmployeesQuery,
+  useUpdatePayingStatusMutation,
+  useTriggerPayrollMutation,
+} from "../hooks/useApiQueries";
+import { getErrorMessage } from "../utilities/api";
 
 const branches = [
-  'HQ - Onitsha',
-  'Mgbuka',
-  'Awka',
-  'Asaba',
-  'Owerri',
-  'Port Harcourt',
-  'Lagos Ajah',
-  'Lagos Apapa',
-  'Enugwu-Ukwu',
-  'Abuja',
-  'Abia',
-  'Nnewi',
-  'Enugu',
-  'Amuwo odofin Lagos',
-  'Ebonyi',
-]
+  "HQ - Onitsha",
+  "Mgbuka",
+  "Awka",
+  "Asaba",
+  "Owerri",
+  "Port Harcourt",
+  "Lagos Ajah",
+  "Lagos Apapa",
+  "Enugwu-Ukwu",
+  "Abuja",
+  "Abia",
+  "Nnewi",
+  "Enugu",
+  "Amuwo odofin Lagos",
+  "Ebonyi",
+  "Nkpor",
+];
 
 const ManagePayments: React.FC = () => {
-  const { token, logout } = useUser();
-
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<number | null>(null);
   const [branchFilter, setBranchFilter] = useState<string | null>("");
   const [userIdsToBeActedOn, setuserIdsToBeActedOn] = useState<number[]>([]);
-  
-  const [employees, setEmployees] = useState<employeeProps[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isProcessingPayment, setIsProcessingPayment] =
-    useState<boolean>(false);
-  const [error, setError] = useState<any>(null);
 
   const [currentPageFromApi, setCurrentPageFromApi] = useState<number>(1);
-  const [totalApiPages, setTotalApiPages] = useState<number>(1);
-  const [totalItems, setTotalItems] = useState<number>(1);
   const [apiItemsPerPage, setApiItemsPerPage] = useState<number>(10);
   const [options, setOptions] = useState<number[]>([]);
 
@@ -59,180 +53,106 @@ const ManagePayments: React.FC = () => {
     useState<boolean>(false);
   const [showVerificationCodeDialog, setShowVerificationCodeDialog] =
     useState<boolean>(false);
-  const [updatingStatus, setUpdatingStatus] = useState(false);
   const [selectedEmployee, setSelectedEmployee] =
     useState<employeeProps | null>(null);
+
+  // Debounce search query
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+      setCurrentPageFromApi(1);
+    }, 400);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
+
+  // React Query hooks
+  const { data, isLoading, error } = useEmployeesQuery({
+    search: debouncedSearch,
+    page: currentPageFromApi,
+    per_page: apiItemsPerPage,
+    paying:
+      paymentStatus !== 0 && paymentStatus !== 1 ? "" : String(paymentStatus),
+    company_branch: branchFilter || "",
+  });
+
+  const updatePayingStatusMutation = useUpdatePayingStatusMutation();
+  const triggerPayrollMutation = useTriggerPayrollMutation();
+
+  const employees: employeeProps[] = useMemo(
+    () => data?.data?.data ?? [],
+    [data],
+  );
+  const totalItems = useMemo(() => data?.data?.total ?? 0, [data]);
+  const totalApiPages = useMemo(() => data?.data?.last_page ?? 1, [data]);
 
   useEffect(() => {
     const newOptions: number[] = generatePerPageOptions(totalItems, 5);
     setOptions(newOptions);
-    
-    if (!newOptions.includes(apiItemsPerPage)) {
-      setApiItemsPerPage(newOptions[0]); 
+
+    if (!newOptions.includes(apiItemsPerPage) && newOptions.length > 0) {
+      setApiItemsPerPage(newOptions[0]);
     }
-
-  }, [totalItems]);
-
-  const fetchEmployees = useCallback(async () => {
-    if (!token) return;
-
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const response = await api.get(
-        `/all_employers?search=${searchQuery}&page=${currentPageFromApi}&per_page=${apiItemsPerPage}&paying=${paymentStatus !== 0 && paymentStatus !== 1 ? '' : paymentStatus}&company_branch=${branchFilter}`,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (response.status === 200 && response.data?.status === "success") {
-        setEmployees(response.data.data.data ?? []);
-        setCurrentPageFromApi(response.data.data.current_page ?? 1);
-        setTotalApiPages(response.data.data.last_page ?? 1);
-        setTotalItems(response.data.data.total ?? 1);
-      } else {
-        toast.error(response.data?.message ?? "Failed to fetch employees");
-        setEmployees([]);
-      }
-    } catch (err: any) {
-      console.error("Error fetching employees:", err);
-      if (err.code === "ECONNABORTED") {
-        toast.error("Request timed out. Please try again.");
-      } else if (err.response?.data?.message === "Unauthenticated.") {
-        const load = toast.loading("Session timed out. Logging out...");
-        setTimeout(() => {
-          logout();
-          toast.dismiss(load);
-        }, 500);
-      } else if (err.response) {
-        toast.error(
-          err.response.data?.message || "Server error while fetching employees."
-        );
-      } else {
-        toast.error("Unexpected error occurred. Please try again.");
-      }
-      setError(err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [token, searchQuery, currentPageFromApi, apiItemsPerPage, branchFilter, paymentStatus, logout]);
-
-  useEffect(() => {
-    fetchEmployees();
-  }, [fetchEmployees]);
+  }, [totalItems, apiItemsPerPage]);
 
   const openConfirm = () => setShowConfirmModal(true);
 
-  const handleCanPay = async (id: number) => {
-    setUpdatingStatus(true);
-    try {
-      const payload = {
-        ids: [id],
-        paying: selectedEmployee?.paying === 0 ? 1 : 0,
-      };
-
-      const response = await api.post("/employees/paying_all", payload);
-      
-      if (response && response.status === 200) {
+  const handleCanPay = (id: number) => {
+    const payload = {
+      ids: [id],
+      paying: (selectedEmployee?.paying === 0 ? 1 : 0) as 0 | 1,
+    };
+    updatePayingStatusMutation.mutate(payload, {
+      onSuccess: () => {
         toast.success("Employee paying status updated successfully");
-        fetchEmployees();
-      }
-    } catch (err: any) {
-      console.log(err);
-      if (err.response) {
-        toast.error(
-          err.response.data?.message ||
-            "Server error during employee updating payment status."
-        );
-      } else {
-        toast.error("An unexpected error occurred. Please try again.");
-      }
-    } finally {
-      setUpdatingStatus(false);
-      setShowUpdateConfirmModal(false);
-    }
+      },
+      onSettled: () => {
+        setShowUpdateConfirmModal(false);
+      },
+    });
   };
 
-  const handleInitializeBulkPayment = async (code: string) => {
-    if (!token) {
-      toast.error("Not authenticated");
-      return;
-    }
-
+  const handleInitializeBulkPayment = (code: string) => {
     if (!employees || employees.length === 0) {
       toast.error("No employees to process payment for.");
       setShowConfirmModal(false);
       return;
     }
 
-    setIsProcessingPayment(true);
-
-    try {
-      const response = await api.post("/trigger-payroll", { code });
-
-      if (response.status === 200 || response.status === 201) {
+    triggerPayrollMutation.mutate(code, {
+      onSuccess: () => {
         toast.success("Payment initialized successfully.");
-        fetchEmployees();
-      } else {
-        toast.error(response.data?.message ?? "Failed to initialize payment.");
-      }
-    } catch (err: any) {
-      console.error("Error initializing  payment:", err);
-      if (err.response) {
-        toast.error(
-          err.response.data?.message || "Server error during payment."
-        );
-      } else {
-        toast.error("An unexpected error occurred. Please try again.");
-      }
-    } finally {
-      setIsProcessingPayment(false);
-      setShowVerificationCodeDialog(false);
-    }
+      },
+      onSettled: () => {
+        setShowVerificationCodeDialog(false);
+      },
+    });
   };
 
-  const handleBulkUpdate = useCallback(
-    async (paying: 0 | 1) => {
-      if (!userIdsToBeActedOn || userIdsToBeActedOn.length === 0) {
-        toast.info("No employees selected to update.");
-        return;
-      }
+  const handleBulkUpdate = (paying: 0 | 1) => {
+    if (!userIdsToBeActedOn || userIdsToBeActedOn.length === 0) {
+      toast.info("No employees selected to update.");
+      return;
+    }
 
-      setUpdatingStatus(true);
-      const loadingId = toast.loading("Processing request...")
-      try {
-        const payload = {
-          ids: userIdsToBeActedOn,
-          paying,
-        };
-
-        const response = await api.post("/employees/paying_all", payload);
-
-        if (response && response.status === 200) {
+    const loadingId = toast.loading("Processing request...");
+    updatePayingStatusMutation.mutate(
+      { ids: userIdsToBeActedOn, paying },
+      {
+        onSuccess: () => {
           toast.success(
             `Successfully updated ${userIdsToBeActedOn.length} employee(s).`,
-          { id: loadingId });
-          fetchEmployees();
+            { id: loadingId },
+          );
           setuserIdsToBeActedOn([]);
-        } else {
-          toast.error(response.data?.message || "An error occurred.", { id: loadingId });
-        }
-      } catch (err: any) {
-        console.error("Error during bulk update:", err);
-        toast.error(
-          err.response?.data?.message || "An unexpected error occurred.", { id: loadingId }
-        );
-      } finally {
-        setUpdatingStatus(false);
-      }
-    },
-    [userIdsToBeActedOn, fetchEmployees]
-  );
+        },
+        onError: (err) => {
+          toast.error(getErrorMessage(err, "An unexpected error occurred."), {
+            id: loadingId,
+          });
+        },
+      },
+    );
+  };
 
   const handlePinDialog = () => {
     setShowConfirmModal(false);
@@ -242,26 +162,30 @@ const ManagePayments: React.FC = () => {
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { checked } = e.target;
     setuserIdsToBeActedOn((prevSelectedIds) => {
-        const currentEmployeeIds = employees.map((emp) => Number(emp.id));
-        if (checked) {
-            // Add all current page employee IDs that are not already selected
-            const newSelectedIds = [
-                ...new Set([...prevSelectedIds, ...currentEmployeeIds]),
-            ];
-            return newSelectedIds;
-        } else {
-            // Remove all current page employee IDs from selected
-            const remainingSelectedIds = prevSelectedIds.filter(
-                (id) => !currentEmployeeIds.includes(id)
-            );
-            return remainingSelectedIds;
-        }
+      const currentEmployeeIds = employees.map((emp) => Number(emp.id));
+      if (checked) {
+        // Add all current page employee IDs that are not already selected
+        const newSelectedIds = [
+          ...new Set([...prevSelectedIds, ...currentEmployeeIds]),
+        ];
+        return newSelectedIds;
+      } else {
+        // Remove all current page employee IDs from selected
+        const remainingSelectedIds = prevSelectedIds.filter(
+          (id) => !currentEmployeeIds.includes(id),
+        );
+        return remainingSelectedIds;
+      }
     });
   };
 
-  const allEmployeeIdsOnPage = employees.map(emp => Number(emp.id));
-  const allSelectedOnPage = allEmployeeIdsOnPage.length > 0 && allEmployeeIdsOnPage.every(id => userIdsToBeActedOn.includes(id));
-  const someSelectedOnPage = allEmployeeIdsOnPage.some(id => userIdsToBeActedOn.includes(id)) && !allSelectedOnPage;
+  const allEmployeeIdsOnPage = employees.map((emp) => Number(emp.id));
+  const allSelectedOnPage =
+    allEmployeeIdsOnPage.length > 0 &&
+    allEmployeeIdsOnPage.every((id) => userIdsToBeActedOn.includes(id));
+  const someSelectedOnPage =
+    allEmployeeIdsOnPage.some((id) => userIdsToBeActedOn.includes(id)) &&
+    !allSelectedOnPage;
 
   return (
     <div className="flex flex-col gap-8 px-4 md:px-6 relative">
@@ -274,7 +198,7 @@ const ManagePayments: React.FC = () => {
             disabled={
               isLoading ||
               employees.length === 0 ||
-              isProcessingPayment
+              triggerPayrollMutation.isPending
             }
             className="flex items-center gap-2 px-4 py-2 cursor-pointer rounded-lg bg-pryClr text-white hover:opacity-95 disabled:opacity-50 transition"
             title="Initialize payment for all employees"
@@ -295,15 +219,12 @@ const ManagePayments: React.FC = () => {
               value={searchQuery}
               onChange={(e) => {
                 if (currentPageFromApi !== 1) {
-                  setCurrentPageFromApi(1)
+                  setCurrentPageFromApi(1);
                 }
-                setSearchQuery(e.target.value)
+                setSearchQuery(e.target.value);
               }}
             />
-            <FiSearch
-              className="text-gray-400"
-              size={18}
-            />
+            <FiSearch className="text-gray-400" size={18} />
           </div>
           {/* filters toggle button */}
           <button
@@ -320,74 +241,76 @@ const ManagePayments: React.FC = () => {
         >
           <div className="flex flex-col text-xs gap-2">
             <label htmlFor="itemsPerPage">Items Per Page</label>
-            <select 
-              name="itemsPerPage" 
+            <select
+              name="itemsPerPage"
               id="itemsPerPage"
               className="border border-pryClr/10 h-10 rounded-md indent-2 outline-0 min-w-36"
               onChange={(e) => {
                 if (currentPageFromApi !== 1) {
-                  setCurrentPageFromApi(1)
+                  setCurrentPageFromApi(1);
                 }
-                setApiItemsPerPage(Number(e.target.value))
+                setApiItemsPerPage(Number(e.target.value));
               }}
             >
-              {
-                options?.map((num, index) => (
-                  <option key={index} value={num}>{num}</option>
-                ))
-              }
+              {options?.map((num, index) => (
+                <option key={index} value={num}>
+                  {num}
+                </option>
+              ))}
             </select>
           </div>
           <div className="flex flex-col text-xs gap-2">
             <label htmlFor="branches">Branch</label>
-            <select 
-              name="branches" 
+            <select
+              name="branches"
               id="branches"
               className="border border-pryClr/10 h-10 rounded-md indent-2 outline-0 min-w-36"
               onChange={(e) => {
                 if (currentPageFromApi !== 1) {
-                  setCurrentPageFromApi(1)
+                  setCurrentPageFromApi(1);
                 }
-                setBranchFilter(e.target.value)
+                setBranchFilter(e.target.value);
               }}
             >
-              {
-                branches.map((branch, index) => (
-                  <option key={index} value={branch}>{branch}</option>
-                ))
-              }
+              {branches.map((branch, index) => (
+                <option key={index} value={branch}>
+                  {branch}
+                </option>
+              ))}
             </select>
           </div>
           <div className="flex flex-col text-xs gap-2">
             <label htmlFor="itemsPerPage">Payment status</label>
-            <select 
-              name="itemsPerPage" 
+            <select
+              name="itemsPerPage"
               id="itemsPerPage"
               className="border border-pryClr/10 h-10 rounded-md indent-2 outline-0 min-w-36"
               onChange={(e) => {
                 if (currentPageFromApi !== 1) {
-                  setCurrentPageFromApi(1)
+                  setCurrentPageFromApi(1);
                 }
-                setPaymentStatus(Number(e.target.value))
+                setPaymentStatus(Number(e.target.value));
               }}
               defaultValue={""}
             >
-              <option value={""} disabled>Select Payment status</option>
+              <option value={""} disabled>
+                Select Payment status
+              </option>
               <option value={"all"}>All</option>
-              {
-                [
-                  {
-                    value: 0,
-                    name: "Excluded"
-                  },
-                  {
-                    value: 1,
-                    name: "Included"
-                  },
-                ].map((option, index) => (
-                  <option key={index} value={option.value}>{option.name}</option>
-                ))
-              }
+              {[
+                {
+                  value: 0,
+                  name: "Excluded",
+                },
+                {
+                  value: 1,
+                  name: "Included",
+                },
+              ].map((option, index) => (
+                <option key={index} value={option.value}>
+                  {option.name}
+                </option>
+              ))}
             </select>
           </div>
         </div>
@@ -403,7 +326,7 @@ const ManagePayments: React.FC = () => {
                   className="accent-pryClr size-6"
                   checked={allSelectedOnPage}
                   onChange={handleSelectAll}
-                  ref={el => {
+                  ref={(el) => {
                     if (el) {
                       el.indeterminate = someSelectedOnPage;
                     }
@@ -411,20 +334,12 @@ const ManagePayments: React.FC = () => {
                 />
               </th>
               <th className="p-4 text-xs whitespace-nowrap">S/N</th>
-              <th className="p-4 text-xs whitespace-nowrap">
-                Full Name
-              </th>
-              <th className="p-4 text-xs whitespace-nowrap">
-                Job Title
-              </th>
-              <th className="p-4 text-xs whitespace-nowrap">
-                Department
-              </th>
+              <th className="p-4 text-xs whitespace-nowrap">Full Name</th>
+              <th className="p-4 text-xs whitespace-nowrap">Job Title</th>
+              <th className="p-4 text-xs whitespace-nowrap">Department</th>
               <th className="p-4 text-xs whitespace-nowrap">Pay</th>
               <th className="p-4 text-xs whitespace-nowrap">Branch</th>
-              <th className="p-4 text-xs whitespace-nowrap">
-                Action
-              </th>
+              <th className="p-4 text-xs whitespace-nowrap">Action</th>
             </tr>
           </thead>
 
@@ -444,7 +359,7 @@ const ManagePayments: React.FC = () => {
                   colSpan={8}
                   className="p-4 text-center border-t border-black/10 text-gray-500"
                 >
-                  {error?.message ?? "Error loading employees"}
+                  {getErrorMessage(error, "Error loading employees")}
                 </td>
               </tr>
             ) : employees.length === 0 ? (
@@ -470,7 +385,9 @@ const ManagePayments: React.FC = () => {
                       <input
                         type="checkbox"
                         className="accent-pryClr size-4"
-                        checked={userIdsToBeActedOn.includes(Number(employee.id))}
+                        checked={userIdsToBeActedOn.includes(
+                          Number(employee.id),
+                        )}
                         onChange={(e) => {
                           const { checked } = e.target;
                           const employeeIdAsNumber = Number(employee.id);
@@ -478,7 +395,9 @@ const ManagePayments: React.FC = () => {
                             if (checked) {
                               return [...prev, employeeIdAsNumber];
                             } else {
-                              return prev.filter((id) => id !== employeeIdAsNumber);
+                              return prev.filter(
+                                (id) => id !== employeeIdAsNumber,
+                              );
                             }
                           });
                         }}
@@ -506,7 +425,8 @@ const ManagePayments: React.FC = () => {
                     N
                     {employee.paying === 0
                       ? 0
-                      : formatterUtility(Number(employee.salary_amount)) ?? "-"}
+                      : (formatterUtility(Number(employee.salary_amount)) ??
+                        "-")}
                   </td>
 
                   <td className="p-2 text-xs whitespace-nowrap">
@@ -516,7 +436,9 @@ const ManagePayments: React.FC = () => {
                   <td className="p-4 text-xs whitespace-nowrap text-pryClr font-bold">
                     <button
                       className={`cursor-pointer disabled:cursor-not-allowed disabled:opacity-25 text- mx-auto w-10 h-10 flex justify-center items-center rounded-md duration-200 transition-all ${
-                        employee.paying === 0 ? "text-pryClr hover:bg-pryClr/10" : "text-red-700 hover:bg-red-700/10"
+                        employee.paying === 0
+                          ? "text-pryClr hover:bg-pryClr/10"
+                          : "text-red-700 hover:bg-red-700/10"
                       }`}
                       title={
                         employee.paying === 0
@@ -525,14 +447,11 @@ const ManagePayments: React.FC = () => {
                       }
                       onClick={() => setShowUpdateConfirmModal(true)}
                     >
-                      {employee.paying === 0
-                        ? 
-                        // "Include Employee"
+                      {employee.paying === 0 ? (
                         <RiUserAddLine size={18} />
-                        : 
-                        // "Exclude Employee"
+                      ) : (
                         <RiUserMinusLine size={18} />
-                      }
+                      )}
                     </button>
                   </td>
                 </tr>
@@ -554,37 +473,35 @@ const ManagePayments: React.FC = () => {
         </table>
       </div>
 
-      {
-        userIdsToBeActedOn.length > 0 && (
-          <div className="fixed z-999 right-6 bottom-8 bg-white max-w-[320px] rounded-lg shadow-2xl border border-pryClr/10 p-4 flex gap-2 items-center justify-center">
-            <p className="font-medium">
-              {userIdsToBeActedOn.length} employee(s) selected.
-            </p>
-            <div className="flex gap-2">
-              <button
-                className="w-full px-3 h-10 rounded-md cursor-pointer text-sm text-pryClr hover:bg-pryClr/10 hover:opacity-90"
-                title="Include Selected"
-                disabled={updatingStatus}
-                onClick={() => {
-                  handleBulkUpdate(1);
-                }}
-              >
-                <TbUsersPlus size={18} />
-              </button>
-              <button
-                className="w-full px-3 h-10 rounded-md cursor-pointer text-sm text-red-600 hover:bg-red-600/10 hover:opacity-90"
-                title="Exclude Selected"
-                disabled={updatingStatus}
-                onClick={() => {
-                  handleBulkUpdate(0);
-                }}
-              >
-                <TbUsersMinus size={18} />
-              </button>
-            </div>
+      {userIdsToBeActedOn.length > 0 && (
+        <div className="fixed z-999 right-6 bottom-8 bg-white max-w-[320px] rounded-lg shadow-2xl border border-pryClr/10 p-4 flex gap-2 items-center justify-center">
+          <p className="font-medium">
+            {userIdsToBeActedOn.length} employee(s) selected.
+          </p>
+          <div className="flex gap-2">
+            <button
+              className="w-full px-3 h-10 rounded-md cursor-pointer text-sm text-pryClr hover:bg-pryClr/10 hover:opacity-90 disabled:opacity-50"
+              title="Include Selected"
+              disabled={updatePayingStatusMutation.isPending}
+              onClick={() => {
+                handleBulkUpdate(1);
+              }}
+            >
+              <TbUsersPlus size={18} />
+            </button>
+            <button
+              className="w-full px-3 h-10 rounded-md cursor-pointer text-sm text-red-600 hover:bg-red-600/10 hover:opacity-90 disabled:opacity-50"
+              title="Exclude Selected"
+              disabled={updatePayingStatusMutation.isPending}
+              onClick={() => {
+                handleBulkUpdate(0);
+              }}
+            >
+              <TbUsersMinus size={18} />
+            </button>
           </div>
-        )
-      }
+        </div>
+      )}
 
       <ConfirmDialog
         isOpen={showConfirmModal}
@@ -617,14 +534,14 @@ const ManagePayments: React.FC = () => {
         onConfirm={() =>
           handleCanPay(selectedEmployee !== null ? +selectedEmployee.id : NaN)
         }
-        isLoading={updatingStatus}
+        isLoading={updatePayingStatusMutation.isPending}
       />
 
       <VerificationCodeDialog
         isOpen={showVerificationCodeDialog}
         onCancel={() => setShowVerificationCodeDialog(false)}
         onConfirm={handleInitializeBulkPayment}
-        isLoading={isProcessingPayment}
+        isLoading={triggerPayrollMutation.isPending}
       />
     </div>
   );

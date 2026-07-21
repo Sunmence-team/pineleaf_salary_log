@@ -1,25 +1,24 @@
-import React, { useEffect, useState } from "react";
-import type { bankProps, employeeProps } from "../../store/sharedinterfaces";
+import React, { useEffect, useState, useMemo } from "react";
+import type {
+  bankProps,
+  CountryApiResponse,
+  StateItem,
+  EditEmployeeProps,
+  EditEmployeeFormValues,
+  employeeProps,
+} from "../../store/sharedinterfaces";
 import Modal from "./Modal";
 import FormattedNumberInput from "../forms/FormattedNumberInput";
 import { toast } from "sonner";
-import {
-  fetchPaystackBanks,
-  resolveAccountNumber,
-} from "../../utilities/paystackHelper";
 import { useFormik } from "formik";
 import * as Yup from "yup";
-import api from "../../utilities/api";
-import { useUser } from "../../context/UserContext";
-import axios from "axios";
-
-const COUNTRY_URL = import.meta.env.VITE_COUNTRY_BASE_URL;
-
-interface CountryApiResponse {
-  name: string;
-  id: number;
-  iso2: string;
-};
+import {
+  useUpdateEmployeeMutation,
+  usePaystackBanksQuery,
+  useResolveAccountQuery,
+  useCountriesQuery,
+  useStatesQuery,
+} from "../../hooks/useApiQueries";
 
 const branches = [
   'HQ - Onitsha',
@@ -36,15 +35,9 @@ const branches = [
   'Nnewi',
   'Enugu',
   'Amuwo odofin Lagos',
-]
-interface EditEmployeeProps {
-  isOpen: boolean;
-  title?: string;
-  employee: employeeProps | null;
-  confirmText?: string;
-  onConfirm: () => void;
-  onCancel: () => void;
-}
+];
+
+
 const EditEmployee = ({
   isOpen,
   title = "Edit employee details",
@@ -53,77 +46,47 @@ const EditEmployee = ({
   onCancel,
   onConfirm,
 }: EditEmployeeProps) => {
-  if (!isOpen) return null;
-
-  const [banks, setBanks] = useState<bankProps[]>([]);
-  const [isLoadingBanks, setIsLoadingBanks] = useState(true);
-  const [isResolving, setIsResolving] = useState(false);
-  const [countries, setCountries] = useState<string[]>([]);
-  const [loadingCountries, setLoadingCountries] = useState(false);
-  const [states, setStates] = useState<string[]>([]);
-  const [loadingStates, setLoadingStates] = useState(false);
-  const [countryIdMap, setCountryIdMap] = useState<Record<string, number>>({});
-  
   const [selectedBankCode, setSelectedBankCode] = useState("");
-  const { token, logout } = useUser();
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    const getBanks = async () => {
-      setIsLoadingBanks(true);
-      try {
-        const fetchedBanks = await fetchPaystackBanks();
-        setBanks(fetchedBanks);
-      } catch (error) {
-        toast.error("Failed to load banks.");
-      } finally {
-        setIsLoadingBanks(false);
-      }
-    };
-    getBanks();
   }, []);
+
+  // React Query hooks
+  const { data: rawBanks, isLoading: isLoadingBanks, isError: isBanksError } = usePaystackBanksQuery();
+  const banks: bankProps[] = rawBanks || [];
 
   useEffect(() => {
-    const fetchCountries = async () => {
-      setLoadingCountries(true);
-      try {
-        const response = await axios.get(`${COUNTRY_URL}/api/countries`);
+    if (isBanksError) {
+      toast.error("Failed to load banks.");
+    }
+  }, [isBanksError]);
 
-        const resData: CountryApiResponse[] = response.data
+  const { data: rawCountries, isLoading: loadingCountries } = useCountriesQuery();
 
-        if (response.status !== 200) {
-          throw new Error(`Request failed with status ${response.status}`);
-        }
+  const { countries, countryIdMap } = useMemo(() => {
+    if (!rawCountries || !Array.isArray(rawCountries)) {
+      return { countries: [], countryIdMap: {} };
+    }
+    const resData: CountryApiResponse[] = rawCountries;
+    const countryList = resData
+      .map((c) => ({ name: c.name, id: c.id, iso2: c.iso2 }))
+      .sort((a, b) => a.name.localeCompare(b.name));
 
-        if (!resData || resData.length === 0) {
-          throw new Error('No countries found');
-        }
+    const idMap: Record<string, number> = {};
+    resData.forEach((c) => {
+      idMap[c.name] = c.id;
+    });
 
-        const countryList = resData
-          .map(c => ({ name: c.name, id: c.id, iso2: c.iso2 }))
-          .sort((a, b) => a.name.localeCompare(b.name));
-
-        const idMap: Record<string, number> = {};
-
-        resData.forEach(c => {
-          idMap[c.name] = c.id;
-        });
-
-        setCountries(countryList.map(c => c.name));
-        setCountryIdMap(idMap);
-        setCountries(countryList.map((c) => c.name));
-      } catch (error) {
-        const message =
-          error instanceof Error ? error.message : "An unknown error occurred";
-        console.error("Error fetching countries:", message);
-      } finally {
-        setLoadingCountries(false);
-      }
+    return {
+      countries: countryList.map((c) => c.name),
+      countryIdMap: idMap,
     };
-    fetchCountries();
-  }, []);
+  }, [rawCountries]);
 
-  const initialValues = {
+  const updateEmployeeMutation = useUpdateEmployeeMutation();
+
+  const initialValues: EditEmployeeFormValues = {
     full_name: employee?.full_name || "",
     email: employee?.email || "",
     phone: employee?.phone || "",
@@ -146,9 +109,10 @@ const EditEmployee = ({
     sub_charge_months: employee?.sub_charge_months || "",
   };
 
-  const formik = useFormik<any>({
+  const formik = useFormik<EditEmployeeFormValues>({
     initialValues,
     enableReinitialize: true,
+
     validationSchema: Yup.object({
       full_name: Yup.string().required("Full Name is required"),
       email: Yup.string()
@@ -182,190 +146,90 @@ const EditEmployee = ({
         .nullable(),
       sub_charge_reason: Yup.string().nullable(),
     }),
-    onSubmit: async (values, { resetForm }) => {
-      console.log("employee create values: ", values);
+    onSubmit: (values, { resetForm }) => {
+      if (!employee?.id) return;
+      
+      const updatePayload: Partial<employeeProps> & Record<string, unknown> = {
+        full_name: values.full_name,
+        email: values.email,
+        phone: values.phone,
+        address: values.address,
+        state: values.state,
+        country: values.country,
+        gender: values.gender,
+        dob: values.dob,
+        jobTitle: values.jobTitle,
+        company_branch: values.company_branch,
+        department: values.department,
+        bank_name: values.bank_name,
+        account_number: values.account_number,
+        account_name: values.account_name,
+        employmentType: values.employmentType,
+        employmentDate: values.employmentDate,
+        salary_amount: values.salary_amount,
+      };
 
-      try {
-        const payload = { ...values };
-        
-        if (payload.sub_charge === "" || payload.sub_charge === null) {
-          delete payload.sub_charge;
-        } else {
-          payload.sub_charge = Number(payload.sub_charge);
-        }
-
-        if (payload.sub_charge_months === "" || payload.sub_charge_months === null) {
-          delete payload.sub_charge_months;
-        } else {
-          payload.sub_charge_months = Number(payload.sub_charge_months);
-        }
-
-        if (payload.sub_charge_reason === "" || payload.sub_charge_reason === null) {
-          delete payload.sub_charge_reason;
-        }
-
-        const response = await api.put(
-          `/edit_employers/${employee?.id}`,
-          payload,
-          {
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        if (response.status === 200 || response.status === 201) {
-          toast.success(response.data.message);
-          resetForm();
-          onConfirm();
-        }
-      } catch (err: any) {
-        console.error("Error fetching employees:", err);
-        if (err.code === "ECONNABORTED") {
-          toast.error("Request timed out. Please try again.");
-        } else if (err.response) {
-          toast.error(
-            err.response.data?.message || "Something went wrong on the server."
-          );
-        } else if (err.request) {
-          toast.error("Server not responding. Please check your connection.");
-        } else if (err.response.data.message === "Unauthenticated.") {
-          const load = toast.loading("Session timed out. logging out");
-          setTimeout(() => {
-            logout();
-            toast.dismiss(load);
-          }, 500);
-        } else {
-          toast.error(
-            `An unexpected error occurred while editing ${employee?.full_name} details ` +
-              err.message
-          );
-          console.error("Error during editing details: ", err);
-        }
+      if (values.sub_charge !== "" && values.sub_charge !== null && values.sub_charge !== undefined) {
+        updatePayload.sub_charge = Number(values.sub_charge);
       }
+      if (values.sub_charge_months !== "" && values.sub_charge_months !== null && values.sub_charge_months !== undefined) {
+        updatePayload.sub_charge_months = Number(values.sub_charge_months);
+      }
+      if (values.sub_charge_reason !== "" && values.sub_charge_reason !== null && values.sub_charge_reason !== undefined) {
+        updatePayload.sub_charge_reason = values.sub_charge_reason;
+      }
+
+      updateEmployeeMutation.mutate(
+        { id: employee.id, payload: updatePayload },
+        {
+          onSuccess: () => {
+            resetForm();
+            onConfirm();
+          },
+        }
+      );
     },
   });
 
-  // useEffect(() => {
-  //   if (formik.values.country) {
-  //     const fetchStates = async () => {
-  //       setLoadingStates(true);
-  //       try {
-  //         const response = await fetch(
-  //           "https://countriesnow.space/api/v0.1/countries/states",
-  //           {
-  //             method: "POST",
-  //             headers: { "Content-Type": "application/json" },
-  //             body: JSON.stringify({ country: formik.values.country }),
-  //           }
-  //         );
-  //         const result = await response.json();
-  //         if (result.error) throw new Error(result.msg);
+  const { setFieldValue } = formik;
 
-  //         const stateList =
-  //           result.data?.states?.map((s: { name: string }) => s.name) || [];
-  //         setStates(stateList);
+  // Selected country ID for fetching states
+  const selectedCountryId = countryIdMap[formik.values.country];
+  const { data: rawStates, isLoading: loadingStates } = useStatesQuery(selectedCountryId);
 
-  //         // Preserve an existing selection if it's valid; otherwise clear.
-  //         const currentState = formik.values.state || employee?.state || "";
-  //         if (currentState && stateList.includes(currentState)) {
-  //           formik.setFieldValue("state", currentState);
-  //         } else {
-  //           formik.setFieldValue("state", "");
-  //         }
-  //       } catch (err) {
-  //         setStates([]);
-  //         // try to keep employee.state if available, otherwise clear
-  //         formik.setFieldValue("state", employee?.state || "");
-  //       } finally {
-  //         setLoadingStates(false);
-  //       }
-  //     };
-  //     fetchStates();
-  //   } else {
-  //     setStates([]);
-  //     formik.setFieldValue("state", employee?.state || "");
-  //   }
-  // }, [formik.values.country]);
+  const states = useMemo(() => {
+    if (!rawStates || !Array.isArray(rawStates)) return [];
+    return (rawStates as StateItem[]).map((s) => s.name).sort();
+  }, [rawStates]);
+
+  // Account resolution query
+  const {
+    data: resolvedData,
+    isFetching: isResolving,
+    error: resolveError,
+  } = useResolveAccountQuery(formik.values.account_number, selectedBankCode);
 
   useEffect(() => {
-    if (formik.values.country && Object.keys(countryIdMap).length > 0) {
-      const fetchStates = async () => {
-        setLoadingStates(true);
-        const countryId = countryIdMap[formik.values.country];
-
-        if (!countryId) {
-          setLoadingStates(false);
-          setStates([]);
-          formik.setFieldValue('state', '');
-          return;
-        }
-
-        try {
-          const response = await fetch(`${COUNTRY_URL}/api/countries/${countryId}/states`);
-          const result = await response.json();
-          if (result.error) throw new Error(result.msg);
-
-          const stateList = result?.map((s: { name: string }) => s.name) || [];
-          setStates(stateList);
-
-          if (!stateList.includes(formik.values.state)) {
-            formik.setFieldValue('state', '');
-          }
-        } catch (err) {
-          setStates([]);
-          formik.setFieldValue('state', '');
-        } finally {
-          setLoadingStates(false);
-        }
-      };
-      fetchStates();
-    } else {
-      setStates([]);
-    }
-  }, [formik.values.country, countryIdMap]);
-
-  useEffect(() => {
-    const resolveAccount = async () => {
-      if (formik.values.account_number.length === 10 && selectedBankCode) {
-        setIsResolving(true);
-        try {
-          const resolvedData = await resolveAccountNumber(
-            formik.values.account_number,
-            selectedBankCode
-          );
-          if (resolvedData && resolvedData.account_name) {
-            formik.setFieldValue("account_name", resolvedData.account_name);
-            toast.success("Account name resolved successfully!");
-          } else {
-            formik.setFieldValue("account_name", "");
-            toast.error(
-              "Could not resolve account name. Please check details."
-            );
-          }
-        } catch (error) {
-          toast.error("An error occurred while resolving the account.");
-        } finally {
-          setIsResolving(false);
-        }
+    if (formik.values.account_number.length === 10 && selectedBankCode) {
+      if (resolvedData && resolvedData.account_name) {
+        setFieldValue("account_name", resolvedData.account_name);
+        toast.success("Account name resolved successfully!");
       }
-    };
+    }
+  }, [resolvedData, formik.values.account_number, selectedBankCode, setFieldValue]);
 
-    const handler = setTimeout(() => {
-      resolveAccount();
-    }, 500);
-
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [formik.values.account_number, selectedBankCode]);
+  useEffect(() => {
+    if (resolveError && formik.values.account_number.length === 10 && selectedBankCode) {
+      setFieldValue("account_name", "");
+      toast.error("Could not resolve account name. Please check details.");
+    }
+  }, [resolveError, formik.values.account_number, selectedBankCode, setFieldValue]);
 
   const handleBankChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedName = event.target.value;
     const selectedBank = banks.find((bank) => bank.name === selectedName);
 
-    formik.setFieldValue("bank_name", selectedName);
+    setFieldValue("bank_name", selectedName);
 
     if (selectedBank) {
       setSelectedBankCode(selectedBank.code);
@@ -373,6 +237,10 @@ const EditEmployee = ({
       setSelectedBankCode("");
     }
   };
+
+  if (!isOpen) return null;
+
+
 
   return (
     <Modal onClose={onCancel}>
@@ -763,7 +631,7 @@ const EditEmployee = ({
             <FormattedNumberInput
               name="sub_charge"
               id="sub_charge"
-              value={formik.values.sub_charge}
+              value={formik.values.sub_charge ?? ""}
               onChange={(value) => formik.setFieldValue("sub_charge", value)}
               onBlur={formik.handleBlur}
               placeholder="e.g. 10000"
@@ -821,10 +689,10 @@ const EditEmployee = ({
           <div className="md:col-span-2">
             <button
               type="submit"
-              disabled={formik.isSubmitting}
+              disabled={updateEmployeeMutation.isPending}
               className="mt-5 text-base h-[50px] bg-pryClr px-4 text-white rounded-lg cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {formik.isSubmitting ? "Updating Employee..." : confirmText}
+              {updateEmployeeMutation.isPending ? "Updating Employee..." : confirmText}
             </button>
           </div>
         </div>
