@@ -1,6 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
-import { useUser } from "../hooks/UseUserContext";
-import api, { getErrorMessage } from "../utilities/api";
+import React, { useEffect, useState, useMemo } from "react";
 import { toast } from "sonner";
 import type {
   branchOveriewProps,
@@ -11,7 +9,11 @@ import { MdDelete, MdRemoveRedEye } from "react-icons/md";
 import ViewEmployee from "../components/modal/ViewEmployee";
 import ConfirmDialog from "../components/modal/ConfirmDialog";
 import EditEmployee from "../components/modal/EditEmployee";
-
+import {
+  useBranchesOverviewQuery,
+  useDeleteEmployeeMutation,
+} from "../hooks/useApiQueries";
+import { getErrorMessage } from "../utilities/api";
 
 const branches = [
   "HQ - Onitsha",
@@ -33,69 +35,56 @@ const branches = [
 ];
 
 const BranchOverview: React.FC = () => {
-  const { token } = useUser();
-  const [branchesOverview, setBranchesOverview] = useState<
-    branchOveriewProps[]
-  >([]);
-  const [selectedBranch, setSelectedBranch] =
-    useState<branchOveriewProps | null>(null);
+  const [selectedBranchName, setSelectedBranchName] = useState<string | null>(null);
   const [selectedEmployee, setSelectedEmployee] =
     useState<employeeProps | null>(null);
-
-  const [isLoading, setIsLoading] = useState(true);
-  const [isDeleting, setIsDeleting] = useState(false);
 
   const [isEditing, setIsEditing] = useState(false);
   const [isViewing, setIsViewing] = useState(false);
   const [employeeToDelete, setEmployeeToDelete] =
     useState<employeeProps | null>(null);
 
-  const fetchBranchesOverview = useCallback(async () => {
-    setIsLoading(true);
-    if (!token) return;
+  // React Query hooks
+  const { data: rawBranchesOverview, isLoading, error } = useBranchesOverviewQuery();
+  const deleteEmployeeMutation = useDeleteEmployeeMutation();
 
-    try {
-      const response = await api.get(`/filter_employers`, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      console.log("branch response", response);
-
-      if (response.status === 200 && response.data.status === "success") {
-        const apiBranches: branchOveriewProps[] = response.data.data || [];
-        const mergedBranches = branches.map((branchName) => {
-          const apiBranch = apiBranches.find(
-            (b) => b.company_branch === branchName,
-          );
-          return (
-            apiBranch || {
-              company_branch: branchName,
-              total_employees: 0,
-              employers: [],
-            }
-          );
-        });
-        setBranchesOverview(mergedBranches);
-      } else {
-        toast.error(
-          `Failed to fetch branches: ${
-            response.data.message || "Unknown error"
-          }`,
-        );
-      }
-    } catch (err: unknown) {
-      toast.error(getErrorMessage(err, "Unexpected error occurred. Please try again."));
-    } finally {
-      setIsLoading(false);
+  const branchesOverview: branchOveriewProps[] = useMemo(() => {
+    if (!rawBranchesOverview || !rawBranchesOverview.data) {
+      return branches.map((branchName) => ({
+        company_branch: branchName,
+        total_employees: 0,
+        employers: [],
+      }));
     }
-  }, [token]);
+
+    const apiBranches: branchOveriewProps[] = rawBranchesOverview.data || [];
+    return branches.map((branchName) => {
+      const apiBranch = apiBranches.find(
+        (b) => b.company_branch === branchName,
+      );
+      return (
+        apiBranch || {
+          company_branch: branchName,
+          total_employees: 0,
+          employers: [],
+        }
+      );
+    });
+  }, [rawBranchesOverview]);
+
+  const selectedBranch = useMemo(() => {
+    if (!selectedBranchName) return null;
+    return (
+      branchesOverview.find((b) => b.company_branch === selectedBranchName) ||
+      null
+    );
+  }, [selectedBranchName, branchesOverview]);
 
   useEffect(() => {
-    fetchBranchesOverview();
-  }, [fetchBranchesOverview]);
+    if (error) {
+      toast.error(getErrorMessage(error, "Failed to load branch overview data."));
+    }
+  }, [error]);
 
   // Function to show the confirmation modal
   const confirmDeletion = (employee: employeeProps) => {
@@ -104,62 +93,17 @@ const BranchOverview: React.FC = () => {
 
   const editAction = () => {
     setSelectedEmployee(null);
-    setSelectedBranch(null);
-    fetchBranchesOverview();
+    setSelectedBranchName(null);
   };
 
   // Function to handle the actual deletion API call
-  const handleDeleteEmployee = async () => {
-    setIsDeleting(true); // Start deleting process, disable button
-    try {
-      const response = await api.delete(
-        `/delete_employers/${employeeToDelete?.id}`,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
-
-      // console.log("employees delete response", response);
-
-      if (response.status === 200) {
-        toast.success(response.data.message);
-
-        if (selectedBranch && employeeToDelete) {
-          const updatedEmployers = selectedBranch.employers.filter(
-            (emp) => Number(emp.id) !== Number(employeeToDelete.id),
-          );
-          setSelectedBranch({
-            ...selectedBranch,
-            employers: updatedEmployers,
-            total_employees: selectedBranch.total_employees - 1,
-          });
-
-          setBranchesOverview((prevBranches) =>
-            prevBranches.map((branch) => {
-              if (branch.company_branch === selectedBranch.company_branch) {
-                return {
-                  ...branch,
-                  employers: updatedEmployers,
-                  total_employees: branch.total_employees - 1,
-                };
-              }
-              return branch;
-            }),
-          );
-        }
-      } else {
-        toast.error(response.data.message || "Failed to delete employee");
-      }
-    } catch (error: unknown) {
-      toast.error(getErrorMessage(error, "Error deleting employee"));
-      console.error("Error deleting employee", error);
-    } finally {
-      setIsDeleting(false);
-      setEmployeeToDelete(null);
-    }
+  const handleDeleteEmployee = () => {
+    if (!employeeToDelete?.id) return;
+    deleteEmployeeMutation.mutate(employeeToDelete.id, {
+      onSettled: () => {
+        setEmployeeToDelete(null);
+      },
+    });
   };
 
   if (isLoading) {
@@ -175,7 +119,7 @@ const BranchOverview: React.FC = () => {
           <div
             key={branchOverview?.company_branch + "" + index}
             className={`bg-white cursor-pointer hover:scale-[103%] transition-all rounded-lg border ${branchOverview?.company_branch === selectedBranch?.company_branch ? "border-pryClr border-2" : "border-pryClr/5"} flex items-center justify-between p-6`}
-            onClick={() => setSelectedBranch(branchOverview)}
+            onClick={() => setSelectedBranchName(branchOverview.company_branch)}
           >
             <div className="flex flex-col items-center gap-1">
               <h4 className="text-black/80 text-xs">Branch Name</h4>
@@ -263,7 +207,7 @@ const BranchOverview: React.FC = () => {
                           className="cursor-pointer text-pryClr disabled:cursor-not-allowed disabled:opacity-25 w-10 h-10 flex justify-center items-center hover:bg-pryClr/10 rounded-md duration-200 transition-all"
                           type="button"
                           title="Delete employee"
-                          disabled={isLoading || isDeleting}
+                          disabled={isLoading || deleteEmployeeMutation.isPending}
                           onClick={() => confirmDeletion(employee)}
                         >
                           <MdDelete size={18} />
@@ -286,7 +230,7 @@ const BranchOverview: React.FC = () => {
         cancelText="Cancel"
         onCancel={() => setEmployeeToDelete(null)}
         onConfirm={handleDeleteEmployee}
-        isLoading={isDeleting}
+        isLoading={deleteEmployeeMutation.isPending}
       />
 
       <EditEmployee
@@ -313,3 +257,4 @@ const BranchOverview: React.FC = () => {
 };
 
 export default BranchOverview;
+

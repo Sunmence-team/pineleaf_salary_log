@@ -58,3 +58,9 @@ export const fetchStates = async (countryId: number) => {
   return response.data;
 };
 
+export const fetchBranchesOverview = async () => {
+  const res = await api.get("/filter_employers");
+  return res.data;
+};
+
+

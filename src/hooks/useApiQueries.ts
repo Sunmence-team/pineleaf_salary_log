@@ -8,6 +8,7 @@ import {
   updateEmployee,
   fetchCountries,
   fetchStates,
+  fetchBranchesOverview,
 } from "../utilities/apiFunctions";
 import {
   fetchPaystackBanks,
@@ -67,6 +68,7 @@ export const useCreateEmployeeMutation = () => {
     onSuccess: (data) => {
       toast.success(data?.message || "Employee added successfully!");
       queryClient.invalidateQueries({ queryKey: ["employees"] });
+      queryClient.invalidateQueries({ queryKey: ["branches-overview"] });
     },
     onError: (error) => {
       const errMsg = getErrorMessage(error, "Error creating employee");
@@ -89,6 +91,7 @@ export const useDeleteEmployeeMutation = () => {
     onSuccess: (data) => {
       toast.success(data?.message || "Employee deleted successfully!");
       queryClient.invalidateQueries({ queryKey: ["employees"] });
+      queryClient.invalidateQueries({ queryKey: ["branches-overview"] });
     },
     onError: (error) => {
       const errMsg = getErrorMessage(error, "Error deleting employee");
@@ -104,6 +107,7 @@ export const useUpdateEmployeeMutation = () => {
     onSuccess: (data) => {
       toast.success(data?.message || "Employee updated successfully!");
       queryClient.invalidateQueries({ queryKey: ["employees"] });
+      queryClient.invalidateQueries({ queryKey: ["branches-overview"] });
     },
     onError: (error) => {
       const errMsg = getErrorMessage(error, "Error updating employee");
@@ -111,6 +115,7 @@ export const useUpdateEmployeeMutation = () => {
     },
   });
 };
+
 
 export const usePaystackBanksQuery = () => {
   return useQuery({
@@ -148,5 +153,13 @@ export const useStatesQuery = (countryId: number | null | undefined) => {
     staleTime: 1000 * 60 * 60 * 24,
   });
 };
+
+export const useBranchesOverviewQuery = () => {
+  return useQuery({
+    queryKey: ["branches-overview"],
+    queryFn: fetchBranchesOverview,
+  });
+};
+
 
 
