@@ -74,18 +74,8 @@ const FailedPayment: React.FC = () => {
           }`,
         );
       }
-    } catch (err: any) {
-      toast.error(
-        err.response.data?.message || "Something went wrong on the server.",
-      );
-      if (
-        err.response.data.message === "No salary paid for that month" &&
-        month
-      ) {
-        toast.error("Couldn't find transaction for the selected month");
-      } else {
-        toast.error("No transaction found");
-      }
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err, "Something went wrong on the server."));
       console.error("Unexpected error occurred. Please try again.", err);
     } finally {
       setIsLoading(false);
@@ -104,7 +94,7 @@ const FailedPayment: React.FC = () => {
     setCurrentPageFromApi(1);
   }, []);
 
-  const convertToCSV = (data: any[]) => {
+  const convertToCSV = (data: Record<string, unknown>[]) => {
     if (!data.length) return "";
 
     const headers = Object.keys(data[0]).join(",");
@@ -116,7 +106,7 @@ const FailedPayment: React.FC = () => {
     return [headers, ...rows].join("\n");
   };
 
-  const downloadCSV = (data: any[], fileName = "transaction.csv") => {
+  const downloadCSV = (data: Record<string, unknown>[], fileName = "transaction.csv") => {
     const csv = convertToCSV(data);
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
@@ -142,16 +132,9 @@ const FailedPayment: React.FC = () => {
         toast.success("Employee paying status updated successfully");
         fetchTransaction();
       }
-    } catch (err: any) {
-      console.log(err);
-      if (err.response) {
-        toast.error(
-          err.response.data?.message ||
-            "Server error during employee updating payment status.",
-        );
-      } else {
-        toast.error("An unexpected error occurred. Please try again.");
-      }
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err, "Failed to update employee payment status"));
+      console.error("Error updating employee payment status", err);
     } finally {
       setUpdatingStatus(false);
       setShowUpdateConfirmModal(false);
@@ -181,15 +164,9 @@ const FailedPayment: React.FC = () => {
       } else {
         toast.error(response.data?.message ?? "Failed to initialize payment.");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err, "Server error during payment."));
       console.error("Error initializing  payment:", err);
-      if (err.response) {
-        toast.error(
-          err.response.data?.message || "Server error during payment.",
-        );
-      } else {
-        toast.error("An unexpected error occurred. Please try again.");
-      }
     } finally {
       setIsProcessingPayment(false);
       setShowVerificationCodeDialog(false);
@@ -227,12 +204,9 @@ const FailedPayment: React.FC = () => {
             id: loadingId,
           });
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("Error during bulk update:", err);
-        toast.error(
-          err.response?.data?.message || "An unexpected error occurred.",
-          { id: loadingId },
-        );
+        toast.error(getErrorMessage(err, "An unexpected error occurred."), { id: loadingId });
       } finally {
         setUpdatingStatus(false);
       }
@@ -320,7 +294,7 @@ const FailedPayment: React.FC = () => {
                       const loading = toast.loading("Exporting as CSV");
 
                       const formatted = transaction.payments.map(
-                        (item: any) => ({
+                        (item: transactionsProps) => ({
                           EmployeeName: item.employer_details?.full_name || "-",
                           Amount: item.amount,
                           Reference:

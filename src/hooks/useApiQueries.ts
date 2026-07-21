@@ -1,8 +1,11 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Login,
   refreshUser,
   createEmployee,
+  fetchEmployees,
+  deleteEmployee,
+  updateEmployee,
   fetchCountries,
   fetchStates,
 } from "../utilities/apiFunctions";
@@ -11,7 +14,7 @@ import {
   resolveAccountNumber,
 } from "../utilities/paystackHelper";
 import { toast } from "sonner";
-import type { userMetrics } from "../store/sharedinterfaces";
+import type { FetchEmployeesParams, userMetrics } from "../store/sharedinterfaces";
 import { useNavigate } from "react-router-dom";
 import { getErrorMessage } from "../utilities/api";
 import { useUser } from "./UseUserContext";
@@ -58,13 +61,52 @@ export const useRefreshUserQuery = () => {
 };
 
 export const useCreateEmployeeMutation = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: createEmployee,
     onSuccess: (data) => {
       toast.success(data?.message || "Employee added successfully!");
+      queryClient.invalidateQueries({ queryKey: ["employees"] });
     },
     onError: (error) => {
       const errMsg = getErrorMessage(error, "Error creating employee");
+      toast.error(errMsg);
+    },
+  });
+};
+
+export const useEmployeesQuery = (params: FetchEmployeesParams) => {
+  return useQuery({
+    queryKey: ["employees", params.search || "", params.page || 1, params.per_page || 5],
+    queryFn: () => fetchEmployees(params),
+  });
+};
+
+export const useDeleteEmployeeMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: deleteEmployee,
+    onSuccess: (data) => {
+      toast.success(data?.message || "Employee deleted successfully!");
+      queryClient.invalidateQueries({ queryKey: ["employees"] });
+    },
+    onError: (error) => {
+      const errMsg = getErrorMessage(error, "Error deleting employee");
+      toast.error(errMsg);
+    },
+  });
+};
+
+export const useUpdateEmployeeMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: updateEmployee,
+    onSuccess: (data) => {
+      toast.success(data?.message || "Employee updated successfully!");
+      queryClient.invalidateQueries({ queryKey: ["employees"] });
+    },
+    onError: (error) => {
+      const errMsg = getErrorMessage(error, "Error updating employee");
       toast.error(errMsg);
     },
   });
@@ -106,4 +148,5 @@ export const useStatesQuery = (countryId: number | null | undefined) => {
     staleTime: 1000 * 60 * 60 * 24,
   });
 };
+
 

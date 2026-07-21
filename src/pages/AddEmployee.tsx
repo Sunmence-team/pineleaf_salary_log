@@ -2,7 +2,12 @@ import React, { useEffect, useState, useMemo } from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { toast } from "sonner";
-import type { bankProps } from "../store/sharedinterfaces";
+import type {
+  bankProps,
+  AddEmployeePayload,
+  CountryApiResponse,
+  StateItem,
+} from "../store/sharedinterfaces";
 import FormattedNumberInput from "../components/forms/FormattedNumberInput";
 import { formatDateToYYYYMMDD } from "../utilities/FormatterUtility";
 import {
@@ -12,18 +17,7 @@ import {
   useCountriesQuery,
   useStatesQuery,
 } from "../hooks/useApiQueries";
-import type { AddEmployeePayload } from "../utilities/apiFunctions";
 
-interface CountryApiResponse {
-  name: string;
-  id: number;
-  iso2: string;
-}
-
-interface StateItem {
-  name: string;
-  isoCode: string;
-}
 
 const AddEmployee = () => {
   const [selectedBankCode, setSelectedBankCode] = useState("");

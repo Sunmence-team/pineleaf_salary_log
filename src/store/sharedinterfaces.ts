@@ -81,9 +81,104 @@ export interface branchOveriewProps {
   employers: employeeProps[];
 }
 
-export   interface userMetrics {
+export interface userMetrics {
   total_employees: number;
   total_salary_paid: number;
   no_CompletedPayments: number;
   total_estimated_salary: number;
 }
+
+export interface AddEmployeePayload {
+  full_name: string;
+  email: string;
+  phone: string;
+  gender: string;
+  dob: string;
+  jobTitle: string;
+  employmentType: string;
+  employmentDate: string;
+  department: string;
+  bank_name: string;
+  account_name: string;
+  account_number: string;
+  salary_amount: string;
+  company_branch: string;
+  address: string;
+  state: string;
+  country: string;
+}
+
+export interface FetchEmployeesParams {
+  search?: string;
+  page?: number;
+  per_page?: number;
+}
+
+export interface UpdateEmployeePayload {
+  id: string;
+  payload: Partial<employeeProps> & Record<string, unknown>;
+}
+
+export interface EditEmployeeFormValues {
+  full_name: string;
+  email: string;
+  phone: string;
+  address: string;
+  state: string;
+  country: string;
+  gender: string;
+  dob: string;
+  jobTitle: string;
+  company_branch: string;
+  department: string;
+  bank_name: string;
+  account_number: string;
+  account_name: string;
+  employmentType: string;
+  employmentDate: string;
+  salary_amount: string;
+  sub_charge: string | number;
+  sub_charge_reason: string;
+  sub_charge_months: string | number;
+}
+
+
+export interface CountryApiResponse {
+  name: string;
+  id: number;
+  iso2: string;
+}
+
+export interface StateItem {
+  name: string;
+  isoCode: string;
+}
+
+export interface EditEmployeeProps {
+  isOpen: boolean;
+  title?: string;
+  employee: employeeProps | null;
+  confirmText?: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+}
+
+export interface ViewEmployeeProps {
+  isOpen: boolean;
+  title?: string;
+  employee: employeeProps | null;
+  onClose: () => void;
+  onUpdate: () => void;
+  showEditButton?: boolean;
+}
+
+export interface ConfirmDialogProps {
+  isOpen: boolean;
+  title?: string;
+  message?: string;
+  confirmText?: string;
+  cancelText?: string;
+  onCancel: () => void;
+  onConfirm: () => void;
+  isLoading?: boolean;
+}

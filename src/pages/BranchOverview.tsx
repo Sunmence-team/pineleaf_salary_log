@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { useUser } from "../hooks/UseUserContext";
-import api from "../utilities/api";
+import api, { getErrorMessage } from "../utilities/api";
 import { toast } from "sonner";
 import type {
   branchOveriewProps,
@@ -11,6 +11,7 @@ import { MdDelete, MdRemoveRedEye } from "react-icons/md";
 import ViewEmployee from "../components/modal/ViewEmployee";
 import ConfirmDialog from "../components/modal/ConfirmDialog";
 import EditEmployee from "../components/modal/EditEmployee";
+
 
 const branches = [
   "HQ - Onitsha",
@@ -85,8 +86,8 @@ const BranchOverview: React.FC = () => {
           }`,
         );
       }
-    } catch (err: any) {
-      toast.error("Unexpected error occurred. Please try again.");
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err, "Unexpected error occurred. Please try again."));
     } finally {
       setIsLoading(false);
     }
@@ -152,8 +153,8 @@ const BranchOverview: React.FC = () => {
       } else {
         toast.error(response.data.message || "Failed to delete employee");
       }
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Error deleting employee");
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, "Error deleting employee"));
       console.error("Error deleting employee", error);
     } finally {
       setIsDeleting(false);

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import ConfirmDialog from "../components/modal/ConfirmDialog";
 import PaginationControls from "../utilities/PaginationControls";
 import {
@@ -12,28 +12,23 @@ import {
   formatterUtility,
 } from "../utilities/FormatterUtility";
 import { FiChevronDown, FiSearch } from "react-icons/fi";
-import { toast } from "sonner";
-import api from "../utilities/api";
 import type { employeeProps } from "../store/sharedinterfaces";
 import EditEmployee from "../components/modal/EditEmployee";
 import ViewEmployee from "../components/modal/ViewEmployee";
-import { useUser } from "../hooks/UseUserContext";
+import {
+  useEmployeesQuery,
+  useDeleteEmployeeMutation,
+} from "../hooks/useApiQueries";
+import { getErrorMessage } from "../utilities/api";
 
 const AllEmployees = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [openDropdown, setOpenDropdown] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [showMobileFilters, setShowMobileFilters] = useState(false);
 
-  const { token, logout } = useUser();
-  const [employees, setEmployees] = useState<employeeProps[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [error, setError] = useState<any>(null);
-
   const [currentPageFromApi, setCurrentPageFromApi] = useState(1);
-  const [totalApiPages, setTotalApiPages] = useState(1);
-
   const apiItemsPerPage = 5;
 
   const statusOptions = ["Remote", "On-site", "Hybrid", "all"];
@@ -46,75 +41,35 @@ const AllEmployees = () => {
   const [employeeToDelete, setEmployeeToDelete] =
     useState<employeeProps | null>(null);
 
-  const editAction = () => {
-    setShowEditModal(false);
-    fetchEmployees();
-  };
-
-  const fetchEmployees = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const response = await api.get(
-        `/all_employers?search=${searchQuery}&page=${currentPageFromApi}&per_page=${apiItemsPerPage}`,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      console.log("employees response", response);
-
-      if (response.status === 200 && response.data.status === "success") {
-        setEmployees(response.data.data.data);
-        setCurrentPageFromApi(response.data.data.current_page);
-        setTotalApiPages(response.data.data.last_page);
-      } else {
-        toast.error(
-          `Failed to fetch employees: ${
-            response.data.message || "Unknown error"
-          }`
-        );
-      }
-    } catch (err: any) {
-      console.error("Error fetching employees:", err);
-      if (err.code === "ECONNABORTED") {
-        toast.error("Request timed out. Please try again.");
-      } else if (err.response) {
-        toast.error(
-          err.response.data?.message || "Something went wrong on the server."
-        );
-      } else if (err.request) {
-        toast.error("Server not responding. Please check your connection.");
-      } else if (err.response.data.message === "Unauthenticated.") {
-        const load = toast.loading("Session timed out. logging out");
-        setTimeout(() => {
-          logout();
-          toast.dismiss(load);
-        }, 500);
-      } else {
-        toast.error("Unexpected error occurred. Please try again.");
-      }
-      setError(err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [token, searchQuery, currentPageFromApi, apiItemsPerPage]);
-
+  // Debounce search query input
   useEffect(() => {
     const delayDebounce = setTimeout(() => {
-      fetchEmployees();
+      setDebouncedSearch(searchQuery);
     }, 500);
 
     return () => clearTimeout(delayDebounce);
-  }, [fetchEmployees]);
+  }, [searchQuery]);
 
+  // Reset page when search or status filter changes
   useEffect(() => {
     setCurrentPageFromApi(1);
-  }, [searchQuery, selectedStatus]);
+  }, [debouncedSearch, selectedStatus]);
+
+  // Fetch employees using React Query
+  const { data: responseData, isLoading, error } = useEmployeesQuery({
+    search: debouncedSearch,
+    page: currentPageFromApi,
+    per_page: apiItemsPerPage,
+  });
+
+  const deleteEmployeeMutation = useDeleteEmployeeMutation();
+
+  const employees: employeeProps[] = responseData?.data?.data || [];
+  const totalApiPages: number = responseData?.data?.last_page || 1;
+
+  const editAction = () => {
+    setShowEditModal(false);
+  };
 
   const filteredList = employees.filter((data) => {
     const statusMatches =
@@ -130,37 +85,15 @@ const AllEmployees = () => {
     setShowConfirmModal(true);
   };
 
-  // Function to handle the actual deletion API call
-  const handleDeleteemployee = async () => {
-    setIsDeleting(true); // Start deleting process, disable button
-    try {
-      const response = await api.delete(
-        `/delete_employers/${employeeToDelete?.id}`,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      // // console.log("employees delete response", response);
-
-      if (response.status === 200) {
-        toast.success(response.data.message);
-        // Remove the deleted employee from the state
-        setEmployees((prevemployees) =>
-          prevemployees.filter((p) => p.id !== employeeToDelete?.id)
-        );
-      }
-    } catch (error) {
-      toast.error("Error deleting employee");
-      console.error("Error deleting employee", error);
-    } finally {
-      setIsDeleting(false);
-      setShowConfirmModal(false);
-      setEmployeeToDelete(null);
-    }
+  // Function to handle the actual deletion API call via React Query mutation
+  const handleDeleteemployee = () => {
+    if (!employeeToDelete?.id) return;
+    deleteEmployeeMutation.mutate(employeeToDelete.id, {
+      onSettled: () => {
+        setShowConfirmModal(false);
+        setEmployeeToDelete(null);
+      },
+    });
   };
 
   const handleModalCancel = () => {
@@ -280,7 +213,7 @@ const AllEmployees = () => {
                   colSpan={8}
                   className="p-4 text-center border-t border-black/10 text-gray-500"
                 >
-                  {typeof error === "string" ? error : (error?.message ?? String(error))}
+                  {getErrorMessage(error, "Failed to load employees")}
                 </td>
               </tr>
             ) : filteredList.length === 0 && !isLoading && !error ? (
@@ -346,7 +279,7 @@ const AllEmployees = () => {
                           className="cursor-pointer text-pryClr disabled:cursor-not-allowed disabled:opacity-25 w-10 h-10 flex justify-center items-center hover:bg-pryClr/10 rounded-md duration-200 transition-all"
                           type="button"
                           title="Delete employee"
-                          disabled={isLoading || isDeleting}
+                          disabled={isLoading || deleteEmployeeMutation.isPending}
                           onClick={() => confirmDeletion(employee)}
                         >
                           <MdDelete size={18} />
@@ -385,7 +318,7 @@ const AllEmployees = () => {
         cancelText="Cancel"
         onCancel={handleModalCancel}
         onConfirm={handleDeleteemployee}
-        isLoading={isDeleting}
+        isLoading={deleteEmployeeMutation.isPending}
       />
 
       <EditEmployee
@@ -409,3 +342,4 @@ const AllEmployees = () => {
 };
 
 export default AllEmployees;
+

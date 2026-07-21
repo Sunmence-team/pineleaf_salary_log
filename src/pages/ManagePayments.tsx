@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import PaginationControls from "../utilities/PaginationControls";
 import { toast } from "sonner";
 import { useUser } from "../hooks/UseUserContext";
-import api from "../utilities/api";
+import api, { getErrorMessage } from "../utilities/api";
 import type { employeeProps } from "../store/sharedinterfaces";
 import ConfirmDialog from "../components/modal/ConfirmDialog";
 import {
@@ -31,6 +31,7 @@ const branches = [
   'Enugu',
   'Amuwo odofin Lagos',
   'Ebonyi',
+  'Nkpor'
 ]
 
 const ManagePayments: React.FC = () => {
@@ -46,7 +47,7 @@ const ManagePayments: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isProcessingPayment, setIsProcessingPayment] =
     useState<boolean>(false);
-  const [error, setError] = useState<any>(null);
+  const [error, setError] = useState<unknown>(null);
 
   const [currentPageFromApi, setCurrentPageFromApi] = useState<number>(1);
   const [totalApiPages, setTotalApiPages] = useState<number>(1);
@@ -99,23 +100,9 @@ const ManagePayments: React.FC = () => {
         toast.error(response.data?.message ?? "Failed to fetch employees");
         setEmployees([]);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error fetching employees:", err);
-      if (err.code === "ECONNABORTED") {
-        toast.error("Request timed out. Please try again.");
-      } else if (err.response?.data?.message === "Unauthenticated.") {
-        const load = toast.loading("Session timed out. Logging out...");
-        setTimeout(() => {
-          logout();
-          toast.dismiss(load);
-        }, 500);
-      } else if (err.response) {
-        toast.error(
-          err.response.data?.message || "Server error while fetching employees."
-        );
-      } else {
-        toast.error("Unexpected error occurred. Please try again.");
-      }
+      toast.error(getErrorMessage(err, "Unexpected error occurred. Please try again."));
       setError(err);
     } finally {
       setIsLoading(false);
@@ -142,16 +129,9 @@ const ManagePayments: React.FC = () => {
         toast.success("Employee paying status updated successfully");
         fetchEmployees();
       }
-    } catch (err: any) {
-      console.log(err);
-      if (err.response) {
-        toast.error(
-          err.response.data?.message ||
-            "Server error during employee updating payment status."
-        );
-      } else {
-        toast.error("An unexpected error occurred. Please try again.");
-      }
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err, "Server error during employee updating payment status."));
+      console.error(err);
     } finally {
       setUpdatingStatus(false);
       setShowUpdateConfirmModal(false);
@@ -181,15 +161,9 @@ const ManagePayments: React.FC = () => {
       } else {
         toast.error(response.data?.message ?? "Failed to initialize payment.");
       }
-    } catch (err: any) {
-      console.error("Error initializing  payment:", err);
-      if (err.response) {
-        toast.error(
-          err.response.data?.message || "Server error during payment."
-        );
-      } else {
-        toast.error("An unexpected error occurred. Please try again.");
-      }
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err, "Server error during payment."));
+      console.error("Error initializing payment:", err);
     } finally {
       setIsProcessingPayment(false);
       setShowVerificationCodeDialog(false);
@@ -222,11 +196,9 @@ const ManagePayments: React.FC = () => {
         } else {
           toast.error(response.data?.message || "An error occurred.", { id: loadingId });
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("Error during bulk update:", err);
-        toast.error(
-          err.response?.data?.message || "An unexpected error occurred.", { id: loadingId }
-        );
+        toast.error(getErrorMessage(err, "An unexpected error occurred."), { id: loadingId });
       } finally {
         setUpdatingStatus(false);
       }

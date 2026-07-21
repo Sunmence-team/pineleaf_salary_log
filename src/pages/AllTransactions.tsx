@@ -4,7 +4,7 @@ import type {
   transactionsProps,
 } from "../store/sharedinterfaces";
 import { toast } from "sonner";
-import api from "../utilities/api";
+import api, { getErrorMessage } from "../utilities/api";
 import PaginationControls from "../utilities/PaginationControls";
 import {
   formatISODateToCustom,
@@ -22,7 +22,6 @@ const AllTransactions: React.FC<AllCotransactionsProps> = ({ isRecent }) => {
   const { token } = useUser();
   const [transactions, setTransactions] = useState<groupTransactionProps[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  // const [error, setError] = useState<any>(null);
   const [selectedMonth, setSelectedMonth] = useState("");
   const [currentPageFromApi, setCurrentPageFromApi] = useState(1);
   const [totalApiPages, setTotalApiPages] = useState(1);
@@ -57,12 +56,13 @@ const AllTransactions: React.FC<AllCotransactionsProps> = ({ isRecent }) => {
           }`
         );
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.error(
-        err.response.data?.message || "Something went wrong on the server."
+        getErrorMessage(err, "Something went wrong on the server.")
       );
       if (
-        err.response.data.message === "No salary paid for that month" && selectedMonth
+        // @ts-ignore
+        err.response?.data?.message === "No salary paid for that month" && selectedMonth
       ) {
         toast.error("Couldn't find transaction for the selected month");
       } else {
@@ -95,7 +95,7 @@ const AllTransactions: React.FC<AllCotransactionsProps> = ({ isRecent }) => {
     transactions: [],
   });
 
-  const convertToCSV = (data: any[]) => {
+  const convertToCSV = (data: Record<string, unknown>[]) => {
     if (!data.length) return "";
 
     const headers = Object.keys(data[0]).join(",");
@@ -107,7 +107,7 @@ const AllTransactions: React.FC<AllCotransactionsProps> = ({ isRecent }) => {
     return [headers, ...rows].join("\n");
   };
 
-  const downloadCSV = (data: any[], fileName = "transactions.csv") => {
+  const downloadCSV = (data: Record<string, unknown>[], fileName = "transactions.csv") => {
     const csv = convertToCSV(data);
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
@@ -118,6 +118,7 @@ const AllTransactions: React.FC<AllCotransactionsProps> = ({ isRecent }) => {
     link.click();
     URL.revokeObjectURL(url);
   };
+
 
   function getMonthsBackward(count = 24) {
     const result = [];
@@ -168,24 +169,8 @@ const AllTransactions: React.FC<AllCotransactionsProps> = ({ isRecent }) => {
               }`
             );
           }
-        } catch (err: any) {
-          if (err.code === "ECONNABORTED") {
-            toast.error("Request timed out. Please try again.");
-          } else if (err.response) {
-            toast.error(
-              err.response.data?.message ||
-                "Something went wrong on the server."
-            );
-          } else if (
-            err.response.data.message === "No salary paid for that month" && selectedMonth
-          ) {
-            toast.error("Couldn't find transaction for the selected month");
-          } else if (err.request) {
-            toast.error("Server not responding. Please check your connection.");
-          } else {
-            toast.error("Unexpected error occurred. Please try again.");
-          }
-          // setError(err);
+        } catch (err: unknown) {
+          toast.error(getErrorMessage(err, "Unexpected error occurred. Please try again."));
         } finally {
           setIsLoading(false);
         }
@@ -281,7 +266,7 @@ const AllTransactions: React.FC<AllCotransactionsProps> = ({ isRecent }) => {
                           }
                           const loading = toast.loading("Exporting as CSV");
 
-                          const formatted = t.payments.map((item: any) => ({
+                          const formatted = t.payments.map((item: transactionsProps) => ({
                             EmployeeName:
                               item.employer_details?.full_name || "-",
                             Amount: item.amount,
