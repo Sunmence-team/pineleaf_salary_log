@@ -1,5 +1,15 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Login, refreshUser } from "../utilities/apiFunctions";
+import {
+  Login,
+  refreshUser,
+  createEmployee,
+  fetchCountries,
+  fetchStates,
+} from "../utilities/apiFunctions";
+import {
+  fetchPaystackBanks,
+  resolveAccountNumber,
+} from "../utilities/paystackHelper";
 import { toast } from "sonner";
 import type { userMetrics } from "../store/sharedinterfaces";
 import { useNavigate } from "react-router-dom";
@@ -44,6 +54,56 @@ export const useRefreshUserQuery = () => {
   return useQuery({
     queryKey: ["refresh-user"],
     queryFn: refreshUser,
-    
   });
 };
+
+export const useCreateEmployeeMutation = () => {
+  return useMutation({
+    mutationFn: createEmployee,
+    onSuccess: (data) => {
+      toast.success(data?.message || "Employee added successfully!");
+    },
+    onError: (error) => {
+      const errMsg = getErrorMessage(error, "Error creating employee");
+      toast.error(errMsg);
+    },
+  });
+};
+
+export const usePaystackBanksQuery = () => {
+  return useQuery({
+    queryKey: ["paystack-banks"],
+    queryFn: fetchPaystackBanks,
+    staleTime: 1000 * 60 * 60,
+  });
+};
+
+export const useResolveAccountQuery = (
+  accountNumber: string,
+  bankCode: string,
+) => {
+  return useQuery({
+    queryKey: ["resolve-account", accountNumber, bankCode],
+    queryFn: () => resolveAccountNumber(accountNumber, bankCode),
+    enabled: accountNumber.length === 10 && Boolean(bankCode),
+    retry: false,
+  });
+};
+
+export const useCountriesQuery = () => {
+  return useQuery({
+    queryKey: ["countries"],
+    queryFn: fetchCountries,
+    staleTime: 1000 * 60 * 60 * 24,
+  });
+};
+
+export const useStatesQuery = (countryId: number | null | undefined) => {
+  return useQuery({
+    queryKey: ["states", countryId],
+    queryFn: () => fetchStates(countryId!),
+    enabled: typeof countryId === "number" && countryId > 0,
+    staleTime: 1000 * 60 * 60 * 24,
+  });
+};
+
