@@ -105,7 +105,7 @@ const FailedPayment: React.FC = () => {
       return;
     }
 
-    triggerPayrollMutation.mutate(code, {
+    triggerPayrollMutation.mutate({ code, payroll_type: "all" }, {
       onSuccess: () => {
         toast.success("Payment initialized successfully.");
       },
