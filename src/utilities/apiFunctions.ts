@@ -17,7 +17,6 @@ export const Login = async (values: { username: string; password: string }) => {
   return res.data;
 };
 
-
 export const refreshUser = async () => {
   const res = await api.get("/me");
   return res.data;
@@ -78,8 +77,20 @@ export const updatePayingStatus = async (
   return res.data;
 };
 
-export const triggerPayroll = async (code: string) => {
-  const res = await api.post("/trigger-payroll", { code });
+export const triggerPayroll = async ({
+  code,
+  payroll_type,
+  branch,
+}: {
+  code: string;
+  payroll_type: string;
+  branch?: string;
+}) => {
+  const res = await api.post("/trigger-payroll", {
+    code,
+    payroll_type,
+    branch
+  });
   return res.data;
 };
 
@@ -99,11 +110,9 @@ export const fetchFailedPayments = async ({
   page = 1,
   per_page = 5,
   month = "",
-}: FetchFailedPaymentsParams = {}) : Promise<FailedPaymentsResponse> => {
+}: FetchFailedPaymentsParams = {}): Promise<FailedPaymentsResponse> => {
   const res = await api.get(
     `/employeenotpaid?page=${page}&per_page=${per_page}&month=${month}`,
   );
   return res.data;
 };
-
-

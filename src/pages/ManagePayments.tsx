@@ -16,6 +16,7 @@ import {
   useTriggerPayrollMutation,
 } from "../hooks/useApiQueries";
 import { getErrorMessage } from "../utilities/api";
+import PaymentTypeSelectorModal from "../components/modal/PaymentTypeSelectorModal";
 
 const branches = [
   "HQ - Onitsha",
@@ -49,6 +50,7 @@ const ManagePayments: React.FC = () => {
   const [options, setOptions] = useState<number[]>([]);
 
   const [showConfirmModal, setShowConfirmModal] = useState<boolean>(false);
+  const [showInitiateModal, setShowInitiateModal] = useState<boolean>(false);
   const [showUpdateConfirmModal, setShowUpdateConfirmModal] =
     useState<boolean>(false);
   const [showVerificationCodeDialog, setShowVerificationCodeDialog] =
@@ -56,6 +58,10 @@ const ManagePayments: React.FC = () => {
   const [selectedEmployee, setSelectedEmployee] =
     useState<employeeProps | null>(null);
 
+  const [otherPaymentField, setOtherPaymentField] = useState<{
+    payroll_type: string;
+    branch?: string;
+  }>();
   // Debounce search query
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -118,14 +124,21 @@ const ManagePayments: React.FC = () => {
       return;
     }
 
-    triggerPayrollMutation.mutate(code, {
-      onSuccess: () => {
-        toast.success("Payment initialized successfully.");
+    triggerPayrollMutation.mutate(
+      {
+        code,
+        payroll_type: otherPaymentField?.payroll_type || "",
+        branch: otherPaymentField?.branch,
       },
-      onSettled: () => {
-        setShowVerificationCodeDialog(false);
+      {
+        onSuccess: () => {
+          toast.success("Payment initialized successfully.");
+        },
+        onSettled: () => {
+          setShowVerificationCodeDialog(false);
+        },
       },
-    });
+    );
   };
 
   const handleBulkUpdate = (paying: 0 | 1) => {
@@ -503,13 +516,25 @@ const ManagePayments: React.FC = () => {
         </div>
       )}
 
-      <ConfirmDialog
+      <PaymentTypeSelectorModal
         isOpen={showConfirmModal}
+        onCancel={() => {
+          setShowConfirmModal(false);
+        }}
+        onConfirm={(otherValues: { payroll_type: string; branch?: string }) => {
+          setShowConfirmModal(false);
+          setShowInitiateModal(true);
+          setOtherPaymentField(otherValues);
+        }}
+      />
+
+      <ConfirmDialog
+        isOpen={showInitiateModal}
         title="Initialize Payment for All Employees?"
         message="You are about to initialize payments for all included employees on this list. This action cannot be undone. Do you want to continue?"
         confirmText="Yes, Initialize"
         cancelText="Cancel"
-        onCancel={() => setShowConfirmModal(false)}
+        onCancel={() => setShowInitiateModal(false)}
         onConfirm={handlePinDialog}
         isLoading={false}
       />
