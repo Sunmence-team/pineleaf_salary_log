@@ -148,7 +148,6 @@ export interface EditEmployeeFormValues {
   sub_charge_months?: string | number;
 }
 
-
 export interface CountryApiResponse {
   name: string;
   id: number;
@@ -187,6 +186,11 @@ export interface ConfirmDialogProps {
   onCancel: () => void;
   onConfirm: () => void;
   isLoading?: boolean;
+}
+export interface PaymentTypeSelectorModalProps {
+  isOpen: boolean;
+  onCancel: () => void;
+  onConfirm: (otherValues: { payroll_type: string; branch?: string }) => void;
 }
 
 export interface UpdatePayingStatusPayload {
@@ -229,4 +233,4 @@ export interface FailedPaymentsResponse {
     last_page: number;
     total: number;
   };
-}
+}
