@@ -3,25 +3,7 @@ import Modal from "./Modal";
 import type { PaymentTypeSelectorModalProps } from "../../store/sharedinterfaces";
 import { IoIosGitBranch } from "react-icons/io";
 import { HiOutlineUsers, HiOutlineArrowRight } from "react-icons/hi2";
-
-const branches = [
-  "HQ - Onitsha",
-  "Mgbuka",
-  "Awka",
-  "Asaba",
-  "Owerri",
-  "Port Harcourt",
-  "Lagos Ajah",
-  "Lagos Apapa",
-  "Enugwu-Ukwu",
-  "Abuja",
-  "Abia",
-  "Nnewi",
-  "Enugu",
-  "Amuwo odofin Lagos",
-  "Ebonyi",
-  "Nkpor",
-];
+import { branches } from "../../store/globals";
 
 const PaymentTypeSelectorModal = ({
   isOpen,

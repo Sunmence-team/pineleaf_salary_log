@@ -14,25 +14,7 @@ import {
   useDeleteEmployeeMutation,
 } from "../hooks/useApiQueries";
 import { getErrorMessage } from "../utilities/api";
-
-const branches = [
-  "HQ - Onitsha",
-  "Mgbuka",
-  "Awka",
-  "Asaba",
-  "Owerri",
-  "Port Harcourt",
-  "Lagos Ajah",
-  "Lagos Apapa",
-  "Enugwu-Ukwu",
-  "Abuja",
-  "Abia",
-  "Nnewi",
-  "Enugu",
-  "Amuwo odofin Lagos",
-  "Ebonyi",
-  "Nkpor",
-];
+import { branches } from "../store/globals";
 
 const BranchOverview: React.FC = () => {
   const [selectedBranchName, setSelectedBranchName] = useState<string | null>(null);

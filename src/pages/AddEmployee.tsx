@@ -17,29 +17,11 @@ import {
   useCountriesQuery,
   useStatesQuery,
 } from "../hooks/useApiQueries";
+import { branches } from "../store/globals";
 
 
 const AddEmployee = () => {
   const [selectedBankCode, setSelectedBankCode] = useState("");
-
-  const branches = [
-    "HQ - Onitsha",
-    "Mgbuka",
-    "Awka",
-    "Asaba",
-    "Owerri",
-    "Port Harcourt",
-    "Lagos Ajah",
-    "Lagos Apapa",
-    "Enugwu-Ukwu",
-    "Abuja",
-    "Abia",
-    "Nnewi",
-    "Enugu",
-    "Amuwo odofin Lagos",
-    "Ebonyi",
-    "Nkpor",
-  ];
 
   useEffect(() => {
     window.scrollTo(0, 0);

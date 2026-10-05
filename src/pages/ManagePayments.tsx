@@ -17,25 +17,7 @@ import {
 } from "../hooks/useApiQueries";
 import { getErrorMessage } from "../utilities/api";
 import PaymentTypeSelectorModal from "../components/modal/PaymentTypeSelectorModal";
-
-const branches = [
-  "HQ - Onitsha",
-  "Mgbuka",
-  "Awka",
-  "Asaba",
-  "Owerri",
-  "Port Harcourt",
-  "Lagos Ajah",
-  "Lagos Apapa",
-  "Enugwu-Ukwu",
-  "Abuja",
-  "Abia",
-  "Nnewi",
-  "Enugu",
-  "Amuwo odofin Lagos",
-  "Ebonyi",
-  "Nkpor",
-];
+import { branches } from "../store/globals";
 
 const ManagePayments: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");

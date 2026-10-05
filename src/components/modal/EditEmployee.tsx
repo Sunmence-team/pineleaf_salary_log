@@ -19,24 +19,7 @@ import {
   useCountriesQuery,
   useStatesQuery,
 } from "../../hooks/useApiQueries";
-
-const branches = [
-  'HQ - Onitsha',
-  'Mgbuka',
-  'Awka',
-  'Asaba',
-  'Owerri',
-  'Port Harcourt',
-  'Lagos Ajah',
-  'Lagos Apapa',
-  'Enugwu-Ukwu',
-  'Abuja',
-  'Abia',
-  'Nnewi',
-  'Enugu',
-  'Amuwo odofin Lagos',
-];
-
+import { branches } from "../../store/globals";
 
 const EditEmployee = ({
   isOpen,
