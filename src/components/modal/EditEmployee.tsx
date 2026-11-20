@@ -36,7 +36,11 @@ const EditEmployee = ({
   }, []);
 
   // React Query hooks
-  const { data: rawBanks, isLoading: isLoadingBanks, isError: isBanksError } = usePaystackBanksQuery();
+  const {
+    data: rawBanks,
+    isLoading: isLoadingBanks,
+    isError: isBanksError,
+  } = usePaystackBanksQuery();
   const banks: bankProps[] = rawBanks || [];
 
   useEffect(() => {
@@ -45,7 +49,8 @@ const EditEmployee = ({
     }
   }, [isBanksError]);
 
-  const { data: rawCountries, isLoading: loadingCountries } = useCountriesQuery();
+  const { data: rawCountries, isLoading: loadingCountries } =
+    useCountriesQuery();
 
   const { countries, countryIdMap } = useMemo(() => {
     if (!rawCountries || !Array.isArray(rawCountries)) {
@@ -87,9 +92,6 @@ const EditEmployee = ({
     employmentType: employee?.employmentType || "",
     employmentDate: employee?.employmentDate || "",
     salary_amount: employee?.salary_amount || "",
-    sub_charge: employee?.sub_charge || "",
-    sub_charge_reason: employee?.sub_charge_reason || "",
-    sub_charge_months: employee?.sub_charge_months || "",
   };
 
   const formik = useFormik<EditEmployeeFormValues>({
@@ -118,20 +120,10 @@ const EditEmployee = ({
       country: Yup.string().required("Country is required"),
       state: Yup.string().required("State is required"),
       address: Yup.string().required("Adress is required"),
-      sub_charge: Yup.number()
-        .transform((value, originalValue) => (originalValue === "" ? null : value))
-        .min(0, "Sub charge cannot be negative")
-        .nullable(),
-      sub_charge_months: Yup.number()
-        .transform((value, originalValue) => (originalValue === "" ? null : value))
-        .integer("Duration must be an integer")
-        .min(1, "Duration must be at least 1 month")
-        .nullable(),
-      sub_charge_reason: Yup.string().nullable(),
     }),
     onSubmit: (values, { resetForm }) => {
       if (!employee?.id) return;
-      
+
       const updatePayload: Partial<employeeProps> & Record<string, unknown> = {
         full_name: values.full_name,
         email: values.email,
@@ -152,16 +144,6 @@ const EditEmployee = ({
         salary_amount: values.salary_amount,
       };
 
-      if (values.sub_charge !== "" && values.sub_charge !== null && values.sub_charge !== undefined) {
-        updatePayload.sub_charge = Number(values.sub_charge);
-      }
-      if (values.sub_charge_months !== "" && values.sub_charge_months !== null && values.sub_charge_months !== undefined) {
-        updatePayload.sub_charge_months = Number(values.sub_charge_months);
-      }
-      if (values.sub_charge_reason !== "" && values.sub_charge_reason !== null && values.sub_charge_reason !== undefined) {
-        updatePayload.sub_charge_reason = values.sub_charge_reason;
-      }
-
       updateEmployeeMutation.mutate(
         { id: employee.id, payload: updatePayload },
         {
@@ -169,7 +151,7 @@ const EditEmployee = ({
             resetForm();
             onConfirm();
           },
-        }
+        },
       );
     },
   });
@@ -178,7 +160,8 @@ const EditEmployee = ({
 
   // Selected country ID for fetching states
   const selectedCountryId = countryIdMap[formik.values.country];
-  const { data: rawStates, isLoading: loadingStates } = useStatesQuery(selectedCountryId);
+  const { data: rawStates, isLoading: loadingStates } =
+    useStatesQuery(selectedCountryId);
 
   const states = useMemo(() => {
     if (!rawStates || !Array.isArray(rawStates)) return [];
@@ -199,14 +182,28 @@ const EditEmployee = ({
         toast.success("Account name resolved successfully!");
       }
     }
-  }, [resolvedData, formik.values.account_number, selectedBankCode, setFieldValue]);
+  }, [
+    resolvedData,
+    formik.values.account_number,
+    selectedBankCode,
+    setFieldValue,
+  ]);
 
   useEffect(() => {
-    if (resolveError && formik.values.account_number.length === 10 && selectedBankCode) {
+    if (
+      resolveError &&
+      formik.values.account_number.length === 10 &&
+      selectedBankCode
+    ) {
       setFieldValue("account_name", "");
       toast.error("Could not resolve account name. Please check details.");
     }
-  }, [resolveError, formik.values.account_number, selectedBankCode, setFieldValue]);
+  }, [
+    resolveError,
+    formik.values.account_number,
+    selectedBankCode,
+    setFieldValue,
+  ]);
 
   const handleBankChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedName = event.target.value;
@@ -222,8 +219,6 @@ const EditEmployee = ({
   };
 
   if (!isOpen) return null;
-
-
 
   return (
     <Modal onClose={onCancel}>
@@ -243,7 +238,7 @@ const EditEmployee = ({
               value={formik.values.full_name}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              className="md:text-sm text-xs py-2 indent-3 border border-gray-300 rounded-md bg-transparent focus:outline-none focus:border-pryClr"
+              className="md:text-sm text-xs h-12 indent-3 border border-gray-300 rounded-md bg-transparent focus:outline-none focus:border-pryClr/50"
             />
             {formik.errors.full_name && formik.touched.full_name && (
               <p className="text-xs text-red-600">
@@ -263,7 +258,7 @@ const EditEmployee = ({
               value={formik.values.email}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              className="md:text-sm text-xs py-2 indent-3 border border-gray-300 rounded-md bg-transparent focus:outline-none focus:border-pryClr"
+              className="md:text-sm text-xs h-12 indent-3 border border-gray-300 rounded-md bg-transparent focus:outline-none focus:border-pryClr/50"
             />
             {formik.errors.email && formik.touched.email && (
               <p className="text-xs text-red-600">
@@ -282,7 +277,7 @@ const EditEmployee = ({
               value={formik.values.phone}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              className="md:text-sm text-xs py-2 indent-3 border border-gray-300 rounded-md bg-transparent focus:outline-none focus:border-pryClr"
+              className="md:text-sm text-xs h-12 indent-3 border border-gray-300 rounded-md bg-transparent focus:outline-none focus:border-pryClr/50"
             />
             {formik.errors.phone && formik.touched.phone && (
               <p className="text-xs text-red-600">
@@ -300,14 +295,16 @@ const EditEmployee = ({
               value={formik.values.gender}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              className="md:text-sm text-xs py-2 indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
+              className="md:text-sm text-xs h-12 indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr/50"
             >
               <option value="">Select Gender</option>
               <option value="male">Male</option>
               <option value="female">Female</option>
             </select>
             {formik.touched.gender && formik.errors.gender && (
-              <p className="text-sm text-red-600">{String(formik.errors.gender)}</p>
+              <p className="text-sm text-red-600">
+                {String(formik.errors.gender)}
+              </p>
             )}
           </div>
 
@@ -322,10 +319,12 @@ const EditEmployee = ({
               value={formik.values.dob}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              className="md:text-sm text-xs py-2 indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
+              className="md:text-sm text-xs h-12 indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr/50"
             />
             {formik.touched.dob && formik.errors.dob && (
-              <p className="text-sm text-red-600">{formik.errors.dob as string}</p>
+              <p className="text-sm text-red-600">
+                {formik.errors.dob as string}
+              </p>
             )}
           </div>
 
@@ -339,7 +338,7 @@ const EditEmployee = ({
               value={formik.values.country}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              className="md:text-sm text-xs py-2 indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
+              className="md:text-sm text-xs h-12 indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr/50"
             >
               <option value="">
                 {loadingCountries
@@ -353,7 +352,9 @@ const EditEmployee = ({
               ))}
             </select>
             {formik.touched.country && formik.errors.country && (
-              <p className="text-sm text-red-600">{formik.errors.country as string}</p>
+              <p className="text-sm text-red-600">
+                {formik.errors.country as string}
+              </p>
             )}
           </div>
 
@@ -367,7 +368,7 @@ const EditEmployee = ({
               value={formik.values.state}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              className="md:text-sm text-xs py-2 indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
+              className="md:text-sm text-xs h-12 indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr/50"
             >
               <option value="">
                 {loadingStates
@@ -381,7 +382,9 @@ const EditEmployee = ({
               ))}
             </select>
             {formik.touched.state && formik.errors.state && (
-              <p className="text-sm text-red-600">{formik.errors.state as string}</p>
+              <p className="text-sm text-red-600">
+                {formik.errors.state as string}
+              </p>
             )}
           </div>
 
@@ -396,10 +399,12 @@ const EditEmployee = ({
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
               cols={4}
-              className="md:text-sm text-xs py-2 indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
-            ></textarea>
+              className="md:text-sm text-xs p-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr/50 resize-y"
+            />
             {formik.touched.address && formik.errors.address && (
-              <p className="text-sm text-red-600">{formik.errors.address as string}</p>
+              <p className="text-sm text-red-600">
+                {formik.errors.address as string}
+              </p>
             )}
           </div>
 
@@ -414,7 +419,7 @@ const EditEmployee = ({
               value={formik.values.department}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              className="md:text-sm text-xs py-2 indent-3 border border-gray-300 rounded-md bg-transparent focus:outline-none focus:border-pryClr"
+              className="md:text-sm text-xs h-12 indent-3 border border-gray-300 rounded-md bg-transparent focus:outline-none focus:border-pryClr/50"
             />
             {formik.errors.department && formik.touched.department && (
               <p className="text-xs text-red-600">
@@ -433,10 +438,12 @@ const EditEmployee = ({
               value={formik.values.jobTitle}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              className="md:text-sm text-xs py-2 indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
+              className="md:text-sm text-xs h-12 indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr/50"
             />
             {formik.touched.jobTitle && formik.errors.jobTitle && (
-              <p className="text-sm text-red-600">{formik.errors.jobTitle as string}</p>
+              <p className="text-sm text-red-600">
+                {formik.errors.jobTitle as string}
+              </p>
             )}
           </div>
           <div className="md:col-span-2 flex flex-col gap-2">
@@ -450,7 +457,7 @@ const EditEmployee = ({
               onBlur={formik.handleBlur}
               value={formik.values.company_branch}
               disabled={branches.length === 0}
-              className="md:text-sm text-xs py-2 indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr disabled:bg-gray-100 disabled:cursor-not-allowed"
+              className="md:text-sm text-xs h-12 indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr/50 disabled:bg-gray-100 disabled:cursor-not-allowed"
             >
               <option disabled value="">
                 Pick Branch
@@ -479,7 +486,7 @@ const EditEmployee = ({
               value={formik.values.employmentType}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              className="md:text-sm text-xs py-2 indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
+              className="md:text-sm text-xs h-12 indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr/50"
             >
               <option value="">Select Employment Type</option>
               <option value="remote">Remote</option>
@@ -505,7 +512,7 @@ const EditEmployee = ({
               value={formik.values.employmentDate}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              className="md:text-sm text-xs py-2 indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr"
+              className="md:text-sm text-xs h-12 indent-3 border border-gray-300 rounded-md focus:outline-none focus:border-pryClr/50"
             />
             {formik.touched.employmentDate && formik.errors.employmentDate && (
               <p className="text-sm text-red-600">
@@ -526,7 +533,7 @@ const EditEmployee = ({
               // defaultValue={""}
               value={formik.values.bank_name}
               disabled={isLoadingBanks}
-              className="md:text-sm text-xs py-2 indent-3 border border-gray-300 rounded-md bg-transparent focus:outline-none focus:border-pryClr cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+              className="md:text-sm text-xs h-12 indent-3 border border-gray-300 rounded-md bg-transparent focus:outline-none focus:border-pryClr/50 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
             >
               <option disabled value="">
                 {isLoadingBanks ? "Loading Banks..." : "Select Bank"}
@@ -555,7 +562,7 @@ const EditEmployee = ({
               value={formik.values.account_number}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              className="md:text-sm text-xs py-2 indent-3 border border-gray-300 rounded-md bg-transparent focus:outline-none focus:border-pryClr"
+              className="md:text-sm text-xs h-12 indent-3 border border-gray-300 rounded-md bg-transparent focus:outline-none focus:border-pryClr/50"
             />
             {formik.errors.account_number && formik.touched.account_number && (
               <p className="text-xs text-red-600">
@@ -573,7 +580,7 @@ const EditEmployee = ({
               name="account_name"
               value={isResolving ? "Resolving..." : formik.values.account_name}
               readOnly
-              className={`md:text-sm text-xs py-2 indent-3 border border-gray-300 rounded-md bg-transparent focus:outline-none focus:border-pryClr ${
+              className={`md:text-sm text-xs h-12 indent-3 border border-gray-300 rounded-md bg-transparent focus:outline-none focus:border-pryClr/50 ${
                 isResolving ? "opacity-50" : ""
               }`}
             />
@@ -593,7 +600,7 @@ const EditEmployee = ({
               value={formik.values.salary_amount}
               onChange={(value) => formik.setFieldValue("salary_amount", value)}
               onBlur={formik.handleBlur}
-              className="md:text-sm text-xs py-2 indent-3 border border-gray-300 rounded-md bg-transparent focus:outline-none focus:border-pryClr"
+              className="md:text-sm text-xs h-12 indent-3 border border-gray-300 rounded-md bg-transparent focus:outline-none focus:border-pryClr/50"
             />
             {formik.errors.salary_amount && formik.touched.salary_amount && (
               <p className="text-xs text-red-600">
@@ -602,80 +609,15 @@ const EditEmployee = ({
             )}
           </div>
 
-          {/* Deductions Section */}
-          <div className="md:col-span-2 border-t border-gray-200 pt-4 mt-2">
-            <h4 className="text-sm font-semibold text-gray-700">Deductions (Optional)</h4>
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <label htmlFor="sub_charge" className="text-xs font-medium">
-              Sub Charge (Deduction Amount)
-            </label>
-            <FormattedNumberInput
-              name="sub_charge"
-              id="sub_charge"
-              value={formik.values.sub_charge ?? ""}
-              onChange={(value) => formik.setFieldValue("sub_charge", value)}
-              onBlur={formik.handleBlur}
-              placeholder="e.g. 10000"
-              className="md:text-sm text-xs py-2 indent-3 border border-gray-300 rounded-md bg-transparent focus:outline-none focus:border-pryClr"
-            />
-            {formik.errors.sub_charge && formik.touched.sub_charge && (
-              <p className="text-xs text-red-600">
-                {formik.errors.sub_charge as string}
-              </p>
-            )}
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <label htmlFor="sub_charge_months" className="text-xs font-medium">
-              Deduction Duration (Months)
-            </label>
-            <input
-              type="number"
-              name="sub_charge_months"
-              id="sub_charge_months"
-              value={formik.values.sub_charge_months}
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-              placeholder="e.g. 1"
-              className="md:text-sm text-xs py-2 indent-3 border border-gray-300 rounded-md bg-transparent focus:outline-none focus:border-pryClr"
-            />
-            {formik.errors.sub_charge_months && formik.touched.sub_charge_months && (
-              <p className="text-xs text-red-600">
-                {formik.errors.sub_charge_months as string}
-              </p>
-            )}
-          </div>
-
-          <div className="md:col-span-2 flex flex-col gap-2">
-            <label htmlFor="sub_charge_reason" className="text-xs font-medium">
-              Deduction Reason
-            </label>
-            <input
-              type="text"
-              name="sub_charge_reason"
-              id="sub_charge_reason"
-              value={formik.values.sub_charge_reason}
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-              placeholder="e.g. Late coming penalty"
-              className="md:text-sm text-xs py-2 indent-3 border border-gray-300 rounded-md bg-transparent focus:outline-none focus:border-pryClr"
-            />
-            {formik.errors.sub_charge_reason && formik.touched.sub_charge_reason && (
-              <p className="text-xs text-red-600">
-                {formik.errors.sub_charge_reason as string}
-              </p>
-            )}
-          </div>
-
-          <div className="md:col-span-2">
+          <div className="md:col-span-2 flex gap-6 justify-end">
             <button
               type="submit"
               disabled={updateEmployeeMutation.isPending}
-              className="mt-5 text-base h-[50px] bg-pryClr px-4 text-white rounded-lg cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+              className="mt-5 text-base h-[50px] bg-pryClr px-4 self-end text-white rounded-lg cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {updateEmployeeMutation.isPending ? "Updating Employee..." : confirmText}
+              {updateEmployeeMutation.isPending
+                ? "Updating Employee..."
+                : confirmText}
             </button>
           </div>
         </div>

@@ -143,9 +143,6 @@ export interface EditEmployeeFormValues {
   employmentType: string;
   employmentDate: string;
   salary_amount: string;
-  sub_charge?: string | number;
-  sub_charge_reason?: string;
-  sub_charge_months?: string | number;
 }
 
 export interface CountryApiResponse {
@@ -174,7 +171,111 @@ export interface ViewEmployeeProps {
   employee: employeeProps | null;
   onClose: () => void;
   onUpdate: () => void;
+  onDeduct?: () => void;
   showEditButton?: boolean;
+}
+
+export interface CreateDeductionPayload {
+  employee_id: number;
+  amount: number;
+  reason: string;
+  no_of_month: number;
+}
+
+export interface DeductionItem {
+  id: number;
+  employee_id: string | number;
+  amount: string | number;
+  reason: string;
+  no_of_month: string | number;
+  start_date?: string;
+  end_date?: string;
+  status?: string;
+  created_at?: string;
+  updated_at?: string;
+  employer?: {
+    id: number;
+    full_name: string;
+    email: string;
+    salary_amount: string;
+  };
+}
+
+export interface CreateDeductionResponse {
+  status: string;
+  message: string;
+  deduction: DeductionItem;
+}
+
+export interface FetchDeductionsParams {
+  status?: string;
+  month?: string;
+  search?: string;
+  page?: number;
+  per_page?: number;
+}
+
+export interface DeductionRecord {
+  id: number;
+  amount: string;
+  employee_id: string;
+  reason: string;
+  no_of_month: string;
+  start_date: string;
+  end_date: string;
+  status: "active" | "completed" | "stopped" | string;
+  created_at: string;
+  updated_at: string;
+  employer: employeeProps;
+}
+
+export interface DeductionsPagination {
+  current_page: number;
+  last_page: number;
+  total: number;
+  per_page: number;
+  data: DeductionRecord[];
+  first_page_url?: string;
+  last_page_url?: string;
+  next_page_url?: string | null;
+  prev_page_url?: string | null;
+  from?: number;
+  to?: number;
+}
+
+export interface DeductionsApiResponse {
+  status: string;
+  count?: number;
+  data: DeductionsPagination;
+}
+
+export interface DeductionModalProps {
+  isOpen: boolean;
+  title?: string;
+  employee?: employeeProps | null;
+  onClose: () => void;
+  onSuccess?: () => void;
+}
+
+export interface ViewDeductionModalProps {
+  isOpen: boolean;
+  deduction: DeductionRecord | null;
+  onClose: () => void;
+  onEdit?: () => void;
+}
+
+export interface UpdateDeductionPayload {
+  amount: number;
+  reason: string;
+  no_of_month: number;
+}
+
+export interface EditDeductionModalProps {
+  isOpen: boolean;
+  title?: string;
+  deduction: DeductionRecord | null;
+  onClose: () => void;
+  onSuccess?: () => void;
 }
 
 export interface ConfirmDialogProps {

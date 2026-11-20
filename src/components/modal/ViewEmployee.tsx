@@ -1,5 +1,6 @@
 import Modal from "./Modal";
 import type { ViewEmployeeProps } from "../../store/sharedinterfaces";
+import { formatterUtility } from "../../utilities/FormatterUtility";
 
 
 const ViewEmployee = ({
@@ -8,7 +9,8 @@ const ViewEmployee = ({
   employee,
   onClose,
   onUpdate,
-showEditButton = true
+  onDeduct,
+  showEditButton = true,
 }: ViewEmployeeProps) => {
   if (!isOpen) return null;
 
@@ -89,19 +91,44 @@ showEditButton = true
             <p className="text-xs font-medium text-gray-500">Estimate Pay</p>
             <p className="text-sm capitalize font-semibold">₦{employee?.salary_amount}</p>
           </div>
+
+          {Boolean(employee?.sub_charge) && (
+            <div className="flex flex-col gap-1 border-b border-gray-500/30 pb-1 mt-3">
+              <p className="text-xs font-medium text-gray-500">Sub Charge (Deduction)</p>
+              <p className="text-sm font-semibold text-red-600">
+                {formatterUtility(Number(employee?.sub_charge))}{employee?.sub_charge_months ? ` (${employee.sub_charge_months} mo${Number(employee.sub_charge_months) > 1 ? "s" : ""})` : ""}
+              </p>
+            </div>
+          )}
+
+          {Boolean(employee?.sub_charge_reason) && (
+            <div className="flex flex-col gap-1 border-b border-gray-500/30 pb-1 mt-3">
+              <p className="text-xs font-medium text-gray-500">Deduction Reason</p>
+              <p className="text-sm font-semibold">{employee?.sub_charge_reason}</p>
+            </div>
+          )}
         </div>
 
-        {showEditButton && (
-          <div className="md:col-span-2">
+        <div className="md:col-span-2 grid md:grid-cols-2 gap-4 items-center">
+          {showEditButton && (
             <button
               type="button"
               onClick={onUpdate}
-              className="text-sm h-[50px] bg-pryClr px-4 text-white rounded-lg cursor-pointer"
+              className="text-sm h-[50px] bg-pryClr px-5 text-white rounded-lg cursor-pointer hover:bg-pryClr/90 transition-colors font-medium"
             >
               Edit Details
             </button>
-          </div>
-        )}
+          )}
+          {onDeduct && (
+            <button
+              type="button"
+              onClick={onDeduct}
+              className="text-sm h-[50px] border border-pryClr text-pryClr hover:bg-pryClr/10 px-5 rounded-lg cursor-pointer transition-colors font-medium"
+            >
+              Add Deduction
+            </button>
+          )}
+        </div>
         
       </div>
     </Modal>

@@ -5,6 +5,7 @@ import { MdOutlineDashboard, MdOutlinePeopleAlt } from 'react-icons/md';
 import { FaUsersCog } from 'react-icons/fa';
 import { RiSecurePaymentLine } from 'react-icons/ri';
 import { IoIosGitBranch } from "react-icons/io";
+import { TbReceiptTax } from "react-icons/tb";
 
 const LeftNav = ({ setIsOpen }: { setIsOpen:React.Dispatch<React.SetStateAction<boolean>> }) => {
 
@@ -23,6 +24,11 @@ const LeftNav = ({ setIsOpen }: { setIsOpen:React.Dispatch<React.SetStateAction<
             name: 'Manage Employees',
             icon: <FaUsersCog size={20} />,
             path: '/managemployees',
+        },
+        {
+            name: 'Deductions',
+            icon: <TbReceiptTax size={20} />,
+            path: '/deductions',
         },
         {
             name: 'Branch Overviews',

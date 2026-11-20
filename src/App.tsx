@@ -9,6 +9,7 @@ import ManagePayments from "./pages/ManagePayments";
 import AllTransactions from "./pages/AllTransactions";
 import BranchOverview from "./pages/BranchOverview";
 import FailedPayment from "./pages/FailedPayment";
+import ManageDeductions from "./pages/ManageDeductions";
 
 function App() {
   return (
@@ -69,6 +70,15 @@ function App() {
             <MainLayout
               pageName="Branch Overview"
               children={<BranchOverview />}
+            />
+          }
+        />
+        <Route
+          path={"/deductions"}
+          element={
+            <MainLayout
+              pageName="Manage Deductions"
+              children={<ManageDeductions />}
             />
           }
         />

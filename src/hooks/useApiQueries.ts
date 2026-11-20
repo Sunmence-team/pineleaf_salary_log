@@ -13,6 +13,10 @@ import {
   triggerPayroll,
   fetchTransactions,
   fetchFailedPayments,
+  createDeduction,
+  fetchDeductions,
+  updateDeduction,
+  deleteDeduction,
 } from "../utilities/apiFunctions";
 import {
   fetchPaystackBanks,
@@ -24,6 +28,7 @@ import type {
   userMetrics,
   FetchTransactionsParams,
   FetchFailedPaymentsParams,
+  FetchDeductionsParams,
 } from "../store/sharedinterfaces";
 import { useNavigate } from "react-router-dom";
 import { getErrorMessage } from "../utilities/api";
@@ -232,5 +237,70 @@ export const useFailedPaymentsQuery = (params: FetchFailedPaymentsParams) => {
       params.per_page || 5,
     ],
     queryFn: () => fetchFailedPayments(params),
+  });
+};
+
+export const useCreateDeductionMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: createDeduction,
+    onSuccess: (data) => {
+      toast.success(data?.message || "Deduction created successfully");
+      queryClient.invalidateQueries({ queryKey: ["employees"] });
+      queryClient.invalidateQueries({ queryKey: ["branches-overview"] });
+      queryClient.invalidateQueries({ queryKey: ["deductions"] });
+    },
+    onError: (error) => {
+      const errMsg = getErrorMessage(error, "Error creating deduction");
+      toast.error(errMsg);
+    },
+  });
+};
+
+export const useDeductionsQuery = (params: FetchDeductionsParams) => {
+  return useQuery({
+    queryKey: [
+      "deductions",
+      params.status || "",
+      params.month || "",
+      params.search || "",
+      params.page || 1,
+      params.per_page || 15,
+    ],
+    queryFn: () => fetchDeductions(params),
+  });
+};
+
+export const useUpdateDeductionMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: updateDeduction,
+    onSuccess: (data) => {
+      toast.success(data?.message || "Deduction updated successfully");
+      queryClient.invalidateQueries({ queryKey: ["deductions"] });
+      queryClient.invalidateQueries({ queryKey: ["employees"] });
+      queryClient.invalidateQueries({ queryKey: ["branches-overview"] });
+    },
+    onError: (error) => {
+      const errMsg = getErrorMessage(error, "Error updating deduction");
+      toast.error(errMsg);
+    },
+  });
+};
+
+export const useDeleteDeductionMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: deleteDeduction,
+    onSuccess: (data) => {
+      toast.success(data?.message || "Deduction deleted successfully");
+      queryClient.invalidateQueries({ queryKey: ["deductions"] });
+      queryClient.invalidateQueries({ queryKey: ["employees"] });
+      queryClient.invalidateQueries({ queryKey: ["branches-overview"] });
+    },
+    onError: (error) => {
+      const errMsg = getErrorMessage(error, "Error deleting deduction");
+      toast.error(errMsg);
+    },
   });
 };

@@ -8,6 +8,11 @@ import type {
   FetchTransactionsParams,
   FetchFailedPaymentsParams,
   FailedPaymentsResponse,
+  CreateDeductionPayload,
+  CreateDeductionResponse,
+  FetchDeductionsParams,
+  DeductionsApiResponse,
+  UpdateDeductionPayload,
 } from "../store/sharedinterfaces";
 
 const COUNTRY_URL = import.meta.env.VITE_COUNTRY_BASE_URL;
@@ -114,5 +119,46 @@ export const fetchFailedPayments = async ({
   const res = await api.get(
     `/employeenotpaid?page=${page}&per_page=${per_page}&month=${month}`,
   );
+  return res.data;
+};
+
+export const createDeduction = async (
+  payload: CreateDeductionPayload,
+): Promise<CreateDeductionResponse> => {
+  const res = await api.post("/deductions", payload);
+  return res.data;
+};
+
+export const fetchDeductions = async ({
+  status = "",
+  month = "",
+  search = "",
+  page = 1,
+  per_page = 15,
+}: FetchDeductionsParams = {}): Promise<DeductionsApiResponse> => {
+  const queryParams = new URLSearchParams();
+  if (status && status !== "all") queryParams.append("status", status);
+  if (month && month !== "all") queryParams.append("month", month);
+  if (search) queryParams.append("search", search);
+  queryParams.append("page", page.toString());
+  queryParams.append("per_page", per_page.toString());
+
+  const res = await api.get(`/deductions?${queryParams.toString()}`);
+  return res.data;
+};
+
+export const updateDeduction = async ({
+  id,
+  payload,
+}: {
+  id: number | string;
+  payload: UpdateDeductionPayload;
+}) => {
+  const res = await api.put(`/deductions/${id}`, payload);
+  return res.data;
+};
+
+export const deleteDeduction = async (id: number | string) => {
+  const res = await api.delete(`/deductions/${id}`);
   return res.data;
 };
